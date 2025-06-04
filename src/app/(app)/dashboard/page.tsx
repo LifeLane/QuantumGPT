@@ -5,7 +5,7 @@ import * as React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { BarChart3, Lightbulb, Settings, Search, Bot } from 'lucide-react';
+import { BarChart3, Lightbulb, Settings, Bot } from 'lucide-react'; // Removed Search icon
 
 export default function DashboardPage() {
   // const userName = "Quantum User"; // Replace with actual user data later
@@ -23,6 +23,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {/* Removed AI Crypto Screener Card
         <Card className="shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out hover:scale-105">
           <CardHeader>
             <CardTitle className="font-headline flex items-center gap-2">
@@ -37,6 +38,7 @@ export default function DashboardPage() {
             </Button>
           </CardContent>
         </Card>
+        */}
         
         <Card className="shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out hover:scale-105">
           <CardHeader>
