@@ -43,8 +43,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <SidebarProvider>
-      <Sidebar defaultOpen>
+    <SidebarProvider defaultOpen>
+      <Sidebar>
         <SidebarHeader className="p-4">
           <Link href="/dashboard" className="flex items-center gap-2">
             <LogoIcon className="w-8 h-8 text-primary" />
