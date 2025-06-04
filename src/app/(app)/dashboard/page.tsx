@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, Search, BotMessageSquare, ListChecks, LineChartIcon } from 'lucide-react'; // Changed LineChart to LineChartIcon
+import { ArrowRight, Search, BotMessageSquare, ListChecks, LineChartIcon } from 'lucide-react';
 import { ResponsiveContainer, LineChart as RechartsLineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 
@@ -21,7 +21,7 @@ const chartConfig = {
     label: "Market Trend",
     color: "hsl(var(--accent))",
   },
-} as const; // Added 'as const' for type safety with ChartContainer
+} as const;
 
 export default function DashboardPage() {
   return (
@@ -32,7 +32,7 @@ export default function DashboardPage() {
       </p>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
+        <Card className="shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out hover:scale-105">
           <CardHeader>
             <CardTitle className="font-headline flex items-center gap-2">
               <Search className="h-6 w-6 text-accent" />
@@ -41,13 +41,13 @@ export default function DashboardPage() {
             <CardDescription>Discover promising cryptocurrencies with our AI-powered screener.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button asChild variant="outline" className="w-full">
-              <Link href="/screener">Start Screening <ArrowRight className="ml-2 h-4 w-4" /></Link>
+            <Button asChild variant="outline" className="w-full group">
+              <Link href="/screener">Start Screening <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" /></Link>
             </Button>
           </CardContent>
         </Card>
 
-        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
+        <Card className="shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out hover:scale-105">
           <CardHeader>
             <CardTitle className="font-headline flex items-center gap-2">
               <BotMessageSquare className="h-6 w-6 text-accent" />
@@ -56,13 +56,13 @@ export default function DashboardPage() {
             <CardDescription>Get AI-suggested trading strategies tailored to your risk profile.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button asChild variant="outline" className="w-full">
-              <Link href="/strategy">Get Strategy <ArrowRight className="ml-2 h-4 w-4" /></Link>
+            <Button asChild variant="outline" className="w-full group">
+              <Link href="/strategy">Get Strategy <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" /></Link>
             </Button>
           </CardContent>
         </Card>
 
-        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
+        <Card className="shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out hover:scale-105">
           <CardHeader>
             <CardTitle className="font-headline flex items-center gap-2">
               <ListChecks className="h-6 w-6 text-accent" />
@@ -71,8 +71,8 @@ export default function DashboardPage() {
             <CardDescription>Monitor your favorite cryptocurrencies and their performance.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button asChild variant="outline" className="w-full">
-              <Link href="/watchlist">View Watchlist <ArrowRight className="ml-2 h-4 w-4" /></Link>
+            <Button asChild variant="outline" className="w-full group">
+              <Link href="/watchlist">View Watchlist <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" /></Link>
             </Button>
           </CardContent>
         </Card>

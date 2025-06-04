@@ -5,24 +5,48 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PlusCircle, Trash2, LineChartIcon, TrendingUp, TrendingDown } from "lucide-react"; // Changed LineChart to LineChartIcon
+import { PlusCircle, Trash2, LineChartIcon, TrendingUp, TrendingDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface WatchlistItem {
   id: string;
   symbol: string;
-  price: number; // Mock price
-  change: number; // Mock change
+  price: number;
+  change: number;
 }
 
+const initialWatchlist: WatchlistItem[] = [
+  { id: "btc", symbol: "BTC", price: 68500.75, change: 1.25 },
+  { id: "eth", symbol: "ETH", price: 3500.20, change: -0.50 },
+  { id: "sol", symbol: "SOL", price: 170.10, change: 2.75 },
+];
+
 export default function WatchlistManager() {
-  const [watchlist, setWatchlist] = React.useState<WatchlistItem[]>([
-    { id: "btc", symbol: "BTC", price: 68500.75, change: 1.25 },
-    { id: "eth", symbol: "ETH", price: 3500.20, change: -0.50 },
-    { id: "sol", symbol: "SOL", price: 170.10, change: 2.75 },
-  ]);
+  const [watchlist, setWatchlist] = React.useState<WatchlistItem[]>(initialWatchlist);
   const [newSymbol, setNewSymbol] = React.useState("");
   const { toast } = useToast();
+
+  React.useEffect(() => {
+    const intervalId = setInterval(() => {
+      setWatchlist(currentWatchlist =>
+        currentWatchlist.map(item => {
+          // Simulate price change: +/- 0.05% to 0.5% of current price
+          const priceChangePercent = (Math.random() - 0.5) * 0.01; // Max 0.5% change
+          const newPrice = item.price * (1 + priceChangePercent);
+          // Simulate 24h change: a random number between -5% and 5%
+          const newChange = (Math.random() - 0.5) * 10; 
+          return {
+            ...item,
+            price: parseFloat(newPrice.toFixed(2)),
+            change: parseFloat(newChange.toFixed(2)),
+          };
+        })
+      );
+    }, 3000); // Update every 3 seconds
+
+    return () => clearInterval(intervalId);
+  }, []);
+
 
   const addCryptoToWatchlist = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,14 +59,14 @@ export default function WatchlistManager() {
       setNewSymbol("");
       return;
     }
-    // In a real app, you'd fetch price data here.
+    
     const newItem: WatchlistItem = {
-      id: newSymbol.toLowerCase(),
-      symbol: newSymbol.toUpperCase(),
-      price: Math.random() * 100000, // Mock price
-      change: (Math.random() - 0.5) * 10, // Mock change
+      id: newSymbol.toLowerCase().trim(),
+      symbol: newSymbol.toUpperCase().trim(),
+      price: parseFloat((Math.random() * 70000 + 100).toFixed(2)), // Mock price between $100 and $70100
+      change: parseFloat(((Math.random() - 0.5) * 10).toFixed(2)), // Mock change
     };
-    setWatchlist([...watchlist, newItem]);
+    setWatchlist(prevWatchlist => [...prevWatchlist, newItem]);
     setNewSymbol("");
     toast({ title: "Success", description: `${newItem.symbol} added to watchlist.` });
   };
@@ -59,7 +83,7 @@ export default function WatchlistManager() {
     <Card className="shadow-lg">
       <CardHeader>
         <CardTitle className="font-headline">Your Watchlist</CardTitle>
-        <CardDescription>Monitor your preferred cryptocurrencies.</CardDescription>
+        <CardDescription>Monitor your preferred cryptocurrencies (prices update every 3s - simulation).</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <form onSubmit={addCryptoToWatchlist} className="flex gap-2">
