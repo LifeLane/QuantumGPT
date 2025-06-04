@@ -2,115 +2,123 @@
 'use server';
 /**
  * @fileOverview Service for fetching cryptocurrency market data.
- * Attempts to use CoinDesk BPI for live Bitcoin data.
- * Falls back to basic mock data for other cryptocurrencies.
+ * Attempts to use Messari API for live data.
+ * Falls back to basic mock data for common cryptocurrencies if Messari API fails.
  */
 
 export interface MarketData {
-  symbol: string;
+  symbol: string; // The symbol as returned by the API or normalized input
   price: number;
-  volume24h?: number | null; // Made optional as BPI doesn't provide it
-  priceChange24hPercent?: number | null; // Made optional as BPI doesn't provide it
+  volume24h?: number | null;
+  priceChange24hPercent?: number | null;
 }
 
-// Helper to normalize symbols for comparison (e.g., "BINANCE:BTCUSDT" -> "BTC")
-function getBaseSymbol(symbol: string): string {
-  let normalized = symbol.toUpperCase();
+// Helper to normalize symbols for Messari (e.g., "BINANCE:BTCUSDT" -> "btc")
+function normalizeSymbolForMessari(symbol: string): string {
+  let normalized = symbol.toLowerCase();
   if (normalized.includes(':')) {
     normalized = normalized.substring(normalized.indexOf(':') + 1);
   }
-  const commonPairs = ['USDT', 'USD', 'BUSD', 'DAI', 'USDC', 'EUR', 'GBP']; // Added common fiat pairs
-  commonPairs.forEach(pair => {
-    if (normalized.endsWith(pair) && normalized.length > pair.length) { // ensure it's not just "USD"
+  // Remove common pairing symbols if they exist at the end
+  const commonPairs = ['usdt', 'usd', 'busd', 'dai', 'usdc', 'eur', 'gbp'];
+  for (const pair of commonPairs) {
+    if (normalized.endsWith(pair) && normalized.length > pair.length) {
       normalized = normalized.substring(0, normalized.length - pair.length);
+      break; 
     }
-  });
+  }
   return normalized;
 }
 
 /**
- * Fetches real-time market data for a given cryptocurrency symbol.
- * Uses CoinDesk BPI for Bitcoin. Other symbols will use mock data.
+ * Fetches real-time market data for a given cryptocurrency symbol using Messari API.
  * @param originalSymbol The cryptocurrency symbol (e.g., "BTC", "BINANCE:ETHUSDT").
  * @returns A Promise resolving to MarketData or null if not found/error.
  */
 export async function fetchRealTimeData(originalSymbol: string): Promise<MarketData | null> {
-  const baseSymbol = getBaseSymbol(originalSymbol);
-  const apiKey = process.env.COINDESK_API_KEY; // Stored but not used by public BPI
+  const messariSymbol = normalizeSymbolForMessari(originalSymbol);
+  const apiKey = process.env.COINDESK_API_KEY;
 
-  if (baseSymbol === "BTC") {
-    const url = `https://api.coindesk.com/v1/bpi/currentprice.json`;
-    try {
-      console.log(`CryptoDataService: Attempting to fetch live BTC data from CoinDesk BPI.`);
-      const response = await fetch(url);
+  if (!apiKey) {
+    console.warn(`CryptoDataService: COINDESK_API_KEY is not set. Falling back to mock data for ${originalSymbol}.`);
+    return getMockData(originalSymbol, messariSymbol);
+  }
 
-      if (!response.ok) {
-        const errorData = await response.text();
-        console.error(`CryptoDataService: CoinDesk BPI API error (status ${response.status}):`, errorData);
-        console.warn(`CryptoDataService: Falling back to mock data for BTC due to API error.`);
-        return getMockData(originalSymbol); // Fallback to mock if BPI fails
-      }
+  const url = `https://data.messari.io/api/v1/assets/${messariSymbol}/metrics`;
+  const headers = {
+    'x-messari-api-key': apiKey,
+  };
 
-      const jsonResponse = await response.json();
+  try {
+    console.log(`CryptoDataService: Attempting to fetch live data for ${messariSymbol} (original: ${originalSymbol}) from Messari.`);
+    const response = await fetch(url, { headers });
 
-      if (jsonResponse.bpi && jsonResponse.bpi.USD) {
-        return {
-          symbol: jsonResponse.chartName || "BTC", // Use chartName or default to BTC
-          price: jsonResponse.bpi.USD.rate_float,
-          volume24h: null, // CoinDesk BPI does not provide 24h volume
-          priceChange24hPercent: null, // CoinDesk BPI does not provide 24h change
-        };
-      } else {
-        console.warn(`CryptoDataService: Unexpected response structure from CoinDesk BPI.`);
-        console.warn(`CryptoDataService: Falling back to mock data for BTC.`);
-        return getMockData(originalSymbol);
-      }
-    } catch (error) {
-      console.error(`CryptoDataService: Error fetching data from CoinDesk BPI:`, error);
-      console.warn(`CryptoDataService: Falling back to mock data for BTC due to fetch error.`);
-      return getMockData(originalSymbol);
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error(`CryptoDataService: Messari API error for ${messariSymbol} (status ${response.status}):`, errorData.slice(0, 500)); // Log snippet of error
+      console.warn(`CryptoDataService: Falling back to mock data for ${originalSymbol} due to API error.`);
+      return getMockData(originalSymbol, messariSymbol);
     }
-  } else {
-    console.warn(`CryptoDataService: The configured CoinDesk API (BPI) primarily provides Bitcoin data. For ${originalSymbol}, mock data will be used. The API key COINDESK_API_KEY is not used for public BPI access.`);
-    return getMockData(originalSymbol);
+
+    const jsonResponse = await response.json();
+
+    if (jsonResponse.data && jsonResponse.data.market_data) {
+      const marketData = jsonResponse.data.market_data;
+      return {
+        symbol: jsonResponse.data.symbol || originalSymbol.toUpperCase(), // Use symbol from API or fallback to original
+        price: marketData.price_usd,
+        volume24h: marketData.volume_last_24_hours,
+        priceChange24hPercent: marketData.percent_change_usd_last_24_hours,
+      };
+    } else {
+      console.warn(`CryptoDataService: Unexpected response structure from Messari for ${messariSymbol}. Full response:`, JSON.stringify(jsonResponse, null, 2).slice(0, 1000));
+      console.warn(`CryptoDataService: Falling back to mock data for ${originalSymbol}.`);
+      return getMockData(originalSymbol, messariSymbol);
+    }
+  } catch (error) {
+    console.error(`CryptoDataService: Error fetching data from Messari for ${messariSymbol}:`, error);
+    console.warn(`CryptoDataService: Falling back to mock data for ${originalSymbol} due to fetch error.`);
+    return getMockData(originalSymbol, messariSymbol);
   }
 }
 
 /**
  * Provides basic mock data as a fallback.
- * @param symbol The cryptocurrency symbol.
+ * @param originalSymbol The original cryptocurrency symbol input by the user.
+ * @param normalizedSymbol The symbol normalized for API calls (e.g., "btc", "eth").
  * @returns Mock MarketData or null.
  */
-function getMockData(symbol: string): MarketData | null {
-  const baseSymbol = getBaseSymbol(symbol).toUpperCase();
-  console.log(`CryptoDataService: Providing MOCK data for ${symbol} (base: ${baseSymbol}).`);
+function getMockData(originalSymbol: string, normalizedSymbol: string): MarketData | null {
+  const displaySymbol = originalSymbol.includes(':') ? originalSymbol.toUpperCase() : normalizedSymbol.toUpperCase();
+  console.log(`CryptoDataService: Providing MOCK data for ${originalSymbol} (normalized: ${normalizedSymbol}).`);
 
-  if (baseSymbol === "BTC") { // Mock for BTC if BPI fails
+  if (normalizedSymbol === "btc") {
     return {
-      symbol: symbol.includes(':') ? symbol.toUpperCase() : "BTC",
-      price: 68500.12,
+      symbol: displaySymbol,
+      price: 68000 + Math.random() * 1000 - 500, // More stable mock
       volume24h: 24000000000.34,
-      priceChange24hPercent: 0.05,
+      priceChange24hPercent: (Math.random() - 0.5) * 2, // Smaller fluctuation
     };
-  } else if (baseSymbol === "ETH") {
+  } else if (normalizedSymbol === "eth") {
     return {
-      symbol: symbol.includes(':') ? symbol.toUpperCase() : "ETH",
-      price: 3850.56,
+      symbol: displaySymbol,
+      price: 3800 + Math.random() * 100 - 50, // More stable mock
       volume24h: 14000000000.78,
-      priceChange24hPercent: -0.15,
+      priceChange24hPercent: (Math.random() - 0.5) * 3, // Smaller fluctuation
     };
-  } else if (baseSymbol === "SOL") {
+  } else if (normalizedSymbol === "sol") {
      return {
-      symbol: symbol.includes(':') ? symbol.toUpperCase() : "SOL",
-      price: 165.23,
+      symbol: displaySymbol,
+      price: 160 + Math.random() * 20 - 10,
       volume24h: 1900000000.45,
-      priceChange24hPercent: 1.2,
+      priceChange24hPercent: (Math.random() - 0.5) * 5,
     };
   }
-  // Generic mock for other symbols
+  // Generic mock for other symbols if specifically requested or as a deep fallback
+  console.warn(`CryptoDataService: No specific mock data for ${normalizedSymbol}. Returning generic random mock.`);
   return {
-    symbol: symbol.toUpperCase(),
-    price: 100 + (Math.random() - 0.5) * 50,
+    symbol: displaySymbol,
+    price: 100 + (Math.random() - 0.5) * 50, // Wider random range
     volume24h: 100000000 + (Math.random() - 0.5) * 50000000,
     priceChange24hPercent: (Math.random() - 0.5) * 10,
   };
@@ -119,11 +127,12 @@ function getMockData(symbol: string): MarketData | null {
 /**
  * Fetches data for a market overview (e.g., top N cryptos).
  * Currently uses fetchRealTimeData for a few predefined symbols.
+ * For a production app, you'd typically use a dedicated "list top assets" endpoint.
  * @returns A Promise resolving to an array of MarketData.
  */
 export async function fetchMarketOverview(): Promise<MarketData[]> {
-  console.log("CryptoDataService: Simulating fetching market overview data using individual real-time calls.");
-  const symbols = ["BTC", "ETH", "SOL", "ADA"]; // ADA will use mock data here
+  console.log("CryptoDataService: Attempting to fetch market overview data using individual real-time calls via Messari.");
+  const symbols = ["BTC", "ETH", "SOL", "ADA"]; // Example symbols
   const results = await Promise.all(symbols.map(s => fetchRealTimeData(s)));
   return results.filter(Boolean) as MarketData[];
 }
