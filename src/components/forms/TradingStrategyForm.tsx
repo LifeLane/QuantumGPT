@@ -11,20 +11,84 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, AlertTriangle, InfoIcon } from "lucide-react";
+import { Loader2, AlertTriangle, InfoIcon, LineChart } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
+// Ensure TradingView is declared globally
+declare global {
+  interface Window { TradingView?: any; }
+}
+
 const formSchema = z.object({
-  cryptocurrency: z.string().min(2, "Symbol too short.").max(10, "Symbol too long.").toUpperCase(),
+  cryptocurrency: z.string().min(2, "Symbol too short.").max(20, "Symbol too long (e.g. BINANCE:BTCUSDT).").toUpperCase(),
   riskTolerance: z.enum(['low', 'medium', 'high'], { required_error: "Please select a risk tolerance level." }),
 });
 
 type FormData = z.infer<typeof formSchema>;
 
+const TradingViewSymbolOverview: React.FC<{ symbol: string; key?: string }> = React.memo(({ symbol }) => {
+  const containerId = `tv-symbol-overview-${symbol.replace(/[^a-zA-Z0-9]/g, "")}-${React.useId().replace(/:/g, "")}`;
+
+  React.useEffect(() => {
+    if (typeof window.TradingView === 'undefined' || !document.getElementById(containerId)) {
+      return;
+    }
+    const widgetContainer = document.getElementById(containerId);
+    if (widgetContainer) {
+        widgetContainer.innerHTML = ''; // Clear previous widget
+        new window.TradingView.SymbolOverview({
+            "symbols": [
+              [symbol]
+            ],
+            "chartOnly": false,
+            "width": "100%",
+            "height": 300,
+            "locale": "en",
+            "colorTheme": "dark",
+            "autosize": true,
+            "showVolume": true,
+            "showMA": false,
+            "hideDateRanges": false,
+            "hideMarketStatus": false,
+            "hideSymbolLogo": false,
+            "scalePosition": "right",
+            "scaleMode": "Normal",
+            "fontFamily": "Inter, sans-serif",
+            "fontSize": "10",
+            "noTimeScale": false,
+            "valuesTracking": "1",
+            "changeMode": "price-and-percent",
+            "chartType": "area",
+            "maLineColor": "#2962FF",
+            "maLineWidth": 1,
+            "maLength": 9,
+            "lineWidth": 2,
+            "lineType": 0,
+            "dateRanges": [
+              "1d|1",
+              "1w|15",
+              "1m|30",
+              "3m|60",
+              "12m|1D",
+              "all|1M"
+            ],
+            "container_id": containerId
+          });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [symbol, containerId]); // Rerun if symbol or containerId changes
+
+  return <div id={containerId} className="mt-4 w-full h-[300px]" />;
+});
+TradingViewSymbolOverview.displayName = 'TradingViewSymbolOverview';
+
+
 export default function TradingStrategyForm() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [suggestion, setSuggestion] = React.useState<SuggestTradingStrategyOutput | null>(null);
+  const [formSubmittedSymbol, setFormSubmittedSymbol] = React.useState<string | null>(null);
+
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -38,6 +102,7 @@ export default function TradingStrategyForm() {
     setIsLoading(true);
     setError(null);
     setSuggestion(null);
+    setFormSubmittedSymbol(data.cryptocurrency); // Store the symbol for the widget
     try {
       const output = await suggestTradingStrategy(data);
       setSuggestion(output);
@@ -54,7 +119,7 @@ export default function TradingStrategyForm() {
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="font-headline">AI Trading Strategy Suggestion</CardTitle>
-          <CardDescription>Get an AI-generated trading strategy for a specific cryptocurrency, using (simulated) real-time data.</CardDescription>
+          <CardDescription>Get an AI-generated trading strategy. Enter a full symbol like "BINANCE:ETHUSDT" or "COINBASE:SOLUSD". The AI will use its market data tool.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -64,11 +129,11 @@ export default function TradingStrategyForm() {
                 name="cryptocurrency"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Cryptocurrency Symbol</FormLabel>
+                    <FormLabel>Cryptocurrency Symbol (e.g., BINANCE:BTCUSDT)</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., ETH, SOL, BTC" {...field} className="bg-background" />
+                      <Input placeholder="e.g., BINANCE:ETHUSDT" {...field} className="bg-background" />
                     </FormControl>
-                    <FormDescription>Enter the ticker symbol. The AI will attempt to fetch its current price.</FormDescription>
+                    <FormDescription>The AI will attempt to fetch its current price using its tool.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -116,29 +181,30 @@ export default function TradingStrategyForm() {
          <Alert variant="default" className="border-accent">
             <InfoIcon className="h-4 w-4 !text-accent" />
             <AlertTitle>Ready for Strategy</AlertTitle>
-            <AlertDescription>Enter a cryptocurrency and your risk tolerance to get an AI-suggested trading strategy. Note: Real-time data fetching is simulated.</AlertDescription>
+            <AlertDescription>Enter a cryptocurrency and your risk tolerance to get an AI-suggested trading strategy. Market data is fetched by an AI tool (simulated).</AlertDescription>
         </Alert>
       )}
 
-      {suggestion && (
+      {suggestion && formSubmittedSymbol && (
         <Card className="shadow-lg">
           <CardHeader>
-            <CardTitle className="font-headline">Suggested Trading Strategy for {form.getValues("cryptocurrency")}</CardTitle>
+            <CardTitle className="font-headline">Suggested Trading Strategy for {formSubmittedSymbol}</CardTitle>
              {suggestion.currentPrice !== undefined && suggestion.currentPrice !== null && (
-              <CardDescription>Based on current price of ${suggestion.currentPrice.toLocaleString()} (simulated real-time data).</CardDescription>
+              <CardDescription>AI analysis based on fetched price of ${suggestion.currentPrice.toLocaleString()} (via tool).</CardDescription>
             )}
              {(suggestion.currentPrice === undefined || suggestion.currentPrice === null) && (
-                 <CardDescription>Current price data was not available for this cryptocurrency. Strategy is based on general analysis.</CardDescription>
+                 <CardDescription>Current price data was not available for this cryptocurrency via the AI's tool. Strategy is based on general analysis.</CardDescription>
              )}
           </CardHeader>
           <CardContent className="space-y-4">
+            <TradingViewSymbolOverview symbol={formSubmittedSymbol} key={formSubmittedSymbol} />
             <div>
-              <h3 className="font-semibold text-lg font-headline">Strategy Explanation:</h3>
+              <h3 className="font-semibold text-lg font-headline mt-4">Strategy Explanation:</h3>
               <p className="text-muted-foreground">{suggestion.strategyExplanation}</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {suggestion.currentPrice !== undefined && suggestion.currentPrice !== null && (
-                <InfoItem label="Fetched Current Price" value={`$${suggestion.currentPrice.toLocaleString()}`} />
+                <InfoItem label="Fetched Current Price (AI Tool)" value={`$${suggestion.currentPrice.toLocaleString()}`} />
               )}
               <InfoItem label="Suggested Entry Point" value={`$${suggestion.entryPoint.toLocaleString()}`} />
               <InfoItem label="Suggested Exit Point" value={`$${suggestion.exitPoint.toLocaleString()}`} />
