@@ -5,15 +5,7 @@ import * as React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { BarChart3, Lightbulb, Settings } from 'lucide-react';
-
-// Placeholder for TradingView MarketOverviewWidget if needed later
-// const MarketOverviewWidget: React.FC = () => {
-//   const containerId = "tradingview-market-overview";
-//   React.useEffect(() => { /* ... TradingView widget logic ... */ }, []);
-//   return <div id={containerId} style={{ height: '450px', width: '100%' }} />;
-// };
-
+import { BarChart3, Lightbulb, Settings, Search, Bot } from 'lucide-react';
 
 export default function DashboardPage() {
   // const userName = "Quantum User"; // Replace with actual user data later
@@ -34,14 +26,29 @@ export default function DashboardPage() {
         <Card className="shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out hover:scale-105">
           <CardHeader>
             <CardTitle className="font-headline flex items-center gap-2">
-              <Lightbulb className="h-6 w-6 text-accent" />
-              Explore AI Features
+              <Search className="h-6 w-6 text-accent" />
+              AI Crypto Screener
             </CardTitle>
-            <CardDescription>Discover AI Screener, Strategy tools, and more. (Coming Soon)</CardDescription>
+            <CardDescription>Discover promising cryptocurrencies with AI.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button variant="outline" className="w-full group" disabled>
-              Access AI Tools
+            <Button asChild variant="outline" className="w-full group">
+              <Link href="/screener">Access AI Screener</Link>
+            </Button>
+          </CardContent>
+        </Card>
+        
+        <Card className="shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out hover:scale-105">
+          <CardHeader>
+            <CardTitle className="font-headline flex items-center gap-2">
+              <Bot className="h-6 w-6 text-accent" />
+              AI Trading Strategy
+            </CardTitle>
+            <CardDescription>Get AI-powered trading strategy suggestions.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild variant="outline" className="w-full group">
+              <Link href="/strategy">Explore AI Strategies</Link>
             </Button>
           </CardContent>
         </Card>
@@ -52,11 +59,26 @@ export default function DashboardPage() {
               <BarChart3 className="h-6 w-6 text-accent" />
               Market Analytics
             </CardTitle>
-            <CardDescription>Advanced charting and market data. (Coming Soon)</CardDescription>
+            <CardDescription>Advanced charting and market data.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild variant="outline" className="w-full group">
+               <Link href="/charting">View Charts</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out hover:scale-105">
+          <CardHeader>
+            <CardTitle className="font-headline flex items-center gap-2">
+              <Lightbulb className="h-6 w-6 text-accent" />
+              More Tools (Coming Soon)
+            </CardTitle>
+            <CardDescription>Watchlist, Price Alerts and more.</CardDescription>
           </CardHeader>
           <CardContent>
             <Button variant="outline" className="w-full group" disabled>
-              View Charts
+              Explore More
             </Button>
           </CardContent>
         </Card>
@@ -77,20 +99,6 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Placeholder for Market Overview or other widgets */}
-      {/* <Card className="shadow-lg">
-        <CardHeader>
-          <CardTitle className="font-headline flex items-center gap-2">
-            Market Overview
-          </CardTitle>
-          <CardDescription>Live market data. (TradingView integration placeholder)</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[450px] bg-muted rounded-md flex items-center justify-center">
-            <p className="text-muted-foreground">Market Overview Widget Placeholder</p>
-          </div>
-        </CardContent>
-      </Card> */}
     </div>
   );
 }

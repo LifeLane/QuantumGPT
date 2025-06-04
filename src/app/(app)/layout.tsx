@@ -20,7 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { LogoIcon } from "@/components/icons/LogoIcon";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Home, Settings, LogOut, LayoutDashboard } from "lucide-react"; // Simplified icons
+import { Home, Settings, LogOut, LayoutDashboard, Search, Bot, ListChecks, Bell, LineChart } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -35,11 +35,11 @@ import { useToast } from "@/hooks/use-toast";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  // { href: "/screener", label: "Crypto Screener", icon: Search }, // Re-add when auth is complete
-  // { href: "/strategy", label: "AI Strategy", icon: BotMessageSquare }, // Re-add when auth is complete
-  // { href: "/watchlist", label: "Watchlist", icon: ListChecks }, // Re-add when auth is complete
-  // { href: "/alerts", label: "Price Alerts", icon: Bell }, // Re-add when auth is complete
-  // { href: "/charting", label: "Charting Tools", icon: LineChartIcon }, // Re-add when auth is complete
+  { href: "/screener", label: "Crypto Screener", icon: Search },
+  { href: "/strategy", label: "AI Strategy", icon: Bot },
+  { href: "/watchlist", label: "Watchlist", icon: ListChecks },
+  { href: "/alerts", label: "Price Alerts", icon: Bell },
+  { href: "/charting", label: "Charting Tools", icon: LineChart },
   { href: "/account/settings", label: "Account Settings", icon: Settings },
 ];
 
@@ -102,7 +102,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center justify-start gap-2 w-full px-2">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src="https://placehold.co/40x40.png" alt="Quantum User" data-ai-hint="user avatar" />
+                  <AvatarImage src="https://placehold.co/40x40.png" alt="Quantum User" data-ai-hint="user avatar"/>
                   <AvatarFallback>QG</AvatarFallback>
                 </Avatar>
                 {/* In a real app, display actual user name */}

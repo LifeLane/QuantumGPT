@@ -1,13 +1,20 @@
 
+import CryptoScreenerForm from "@/components/forms/CryptoScreenerForm";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Search } from "lucide-react";
+
 export default function ScreenerPage() {
   return (
-    <div className="flex flex-col items-center justify-center h-full">
-      <div className="p-8 rounded-lg shadow-xl bg-card text-card-foreground max-w-md text-center">
-        <h1 className="text-2xl font-headline mb-4">Crypto Screener</h1>
-        <p className="text-muted-foreground">
-          The AI-powered Crypto Screener feature is currently under development and will be available here for authenticated users soon.
-        </p>
+    <div className="space-y-6">
+       <div className="flex items-center justify-between space-y-2">
+        <div>
+          <h2 className="text-3xl font-headline font-bold tracking-tight">AI Crypto Screener</h2>
+          <p className="text-muted-foreground">
+            Leverage artificial intelligence to discover cryptocurrencies based on your criteria.
+          </p>
+        </div>
       </div>
+      <CryptoScreenerForm />
     </div>
   );
 }
