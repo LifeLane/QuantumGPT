@@ -1,3 +1,13 @@
-// This file is intentionally blank.
-// The page /app/(app)/strategy/page.tsx has been removed as part of the user authentication restructure.
-// Features like "AI Strategy" will be re-integrated later for authenticated users.
+
+export default function StrategyPage() {
+  return (
+    <div className="flex flex-col items-center justify-center h-full">
+      <div className="p-8 rounded-lg shadow-xl bg-card text-card-foreground max-w-md text-center">
+        <h1 className="text-2xl font-headline mb-4">AI Trading Strategy</h1>
+        <p className="text-muted-foreground">
+          The AI Trading Strategy feature is currently under development and will be available here for authenticated users soon.
+        </p>
+      </div>
+    </div>
+  );
+}
