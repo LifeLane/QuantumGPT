@@ -1,5 +1,4 @@
 
-'use server';
 /**
  * @fileOverview Genkit tool for fetching cryptocurrency market data.
  * This tool uses the crypto-data-service to fetch data.

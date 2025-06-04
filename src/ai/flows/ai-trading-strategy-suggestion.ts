@@ -12,7 +12,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { getCryptoMarketDataTool, type MarketData } from '@/ai/tools/market-data-tool';
+import { getCryptoMarketDataTool, type MarketData, MarketDataSchema } from '@/ai/tools/market-data-tool';
 
 const SuggestTradingStrategyInputSchema = z.object({
   cryptocurrency: z.string().describe('The ticker symbol of the cryptocurrency to analyze (e.g., BTC).'),
@@ -22,11 +22,11 @@ export type SuggestTradingStrategyInput = z.infer<typeof SuggestTradingStrategyI
 
 const SuggestTradingStrategyOutputSchema = z.object({
   strategyExplanation: z.string().describe('A detailed explanation of the suggested trading strategy, considering the current market price.'),
-  currentPrice: z.number().optional().describe('The current market price of the cryptocurrency, obtained via the market data tool.'),
-  entryPoint: z.number().describe('A suggested entry point for the trade, based on the strategy and current price.'),
-  exitPoint: z.number().describe('A suggested exit point for the trade, based on the strategy.'),
-  stopLossLevel: z.number().describe('A suggested stop-loss level for the trade, based on the strategy.'),
-  profitTarget: z.number().describe('A profit target for the trade, based on the strategy.'),
+  currentPrice: z.number().optional().describe('The current market price of the cryptocurrency, obtained via the market data tool. This is illustrative and based on AI analysis, not live financial data.'),
+  entryPoint: z.number().describe('An illustrative suggested entry point for the trade, based on the strategy and current price.'),
+  exitPoint: z.number().describe('An illustrative suggested exit point for the trade, based on the strategy.'),
+  stopLossLevel: z.number().describe('An illustrative suggested stop-loss level for the trade, based on the strategy.'),
+  profitTarget: z.number().describe('An illustrative profit target for the trade, based on the strategy.'),
   disclaimer: z
     .string()
     .describe(
@@ -65,12 +65,12 @@ Consider the following:
 
 Provide the following:
 - Strategy Explanation: A clear and concise explanation of the suggested strategy, considering the current price.
-- Current Price: The current price that was fetched (if available).
-- Entry Point: A recommended price to enter the trade based on the strategy and current price.
-- Exit Point: A recommended price to exit the trade based on the strategy.
-- Stop-Loss Level: A price level at which to set a stop-loss order based on the strategy.
-- Profit Target: A price level at which to take profit based on the strategy.
-- Disclaimer: A standard disclaimer about the risks of trading and the nature of AI-generated advice.
+- Current Price: The current price that was fetched (if available). This value is for illustrative purposes.
+- Entry Point: A recommended price to enter the trade based on the strategy and current price. This value is for illustrative purposes.
+- Exit Point: A recommended price to exit the trade based on the strategy. This value is for illustrative purposes.
+- Stop-Loss Level: A price level at which to set a stop-loss order based on the strategy. This value is for illustrative purposes.
+- Profit Target: A price level at which to take profit based on the strategy. This value is for illustrative purposes.
+- Disclaimer: A standard disclaimer about the risks of trading and the nature of AI-generated advice. Emphasize that all figures are illustrative and not financial advice.
 
 Format your response as a JSON object with the fields: strategyExplanation, currentPrice, entryPoint, exitPoint, stopLossLevel, profitTarget, and disclaimer.
 If current market data was not available, the currentPrice field can be omitted or set to null, and your strategy should reflect this lack of live data.
