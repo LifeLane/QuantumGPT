@@ -53,7 +53,7 @@ export default function CryptoScreenerForm() {
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="font-headline">AI Crypto Screener</CardTitle>
-          <CardDescription>Define your criteria. The AI will attempt to use its market data tool (currently using simulated real-time data from <code>src/services/crypto-data-service.ts</code>).</CardDescription>
+          <CardDescription>Define your criteria. The AI will attempt to use its market data tool to fetch live data (via CoinDesk/Messari API provided in <code>src/services/crypto-data-service.ts</code>).</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -97,7 +97,7 @@ export default function CryptoScreenerForm() {
          <Alert variant="default" className="border-accent">
             <InfoIcon className="h-4 w-4 !text-accent" />
             <AlertTitle>Ready to Screen</AlertTitle>
-            <AlertDescription>Enter your criteria above and click "Screen Cryptos" to see AI-powered results. Market data for AI analysis is currently fetched using a <strong>simulated data service</strong>. For live data, please integrate a real API in <code>src/services/crypto-data-service.ts</code>.</AlertDescription>
+            <AlertDescription>Enter your criteria above and click "Screen Cryptos" to see AI-powered results. Market data for AI analysis is attempted to be fetched live using the CoinDesk/Messari API via <code>src/services/crypto-data-service.ts</code>. If the API fails or a symbol is unsupported, basic mock data may be used as a fallback.</AlertDescription>
         </Alert>
       )}
 
@@ -111,9 +111,9 @@ export default function CryptoScreenerForm() {
             </CardDescription>
              <Alert variant="default" className="mt-2 border-primary/50">
                 <DatabaseZap className="h-4 w-4 !text-primary" />
-                <AlertTitle className="text-primary">Simulated Data Notice</AlertTitle>
+                <AlertTitle className="text-primary">Live Data Notice</AlertTitle>
                 <AlertDescription>
-                    Prices and volumes displayed below are from the AI's analysis tool, which currently uses a <strong>simulated data service</strong> (<code>src/services/crypto-data-service.ts</code>). For live, accurate market data, this service needs to be connected to a real API provider.
+                    Prices and volumes displayed below are attempted to be fetched live by the AI's analysis tool using the CoinDesk/Messari API (configured in <code>src/services/crypto-data-service.ts</code>). If the API call fails for a specific token, or if the API key is invalid/not configured, the system may fall back to basic mock data or show 'N/A'.
                 </AlertDescription>
             </Alert>
           </CardHeader>
@@ -137,13 +137,13 @@ export default function CryptoScreenerForm() {
                     {results.map((crypto) => (
                       <TableRow key={crypto.symbol}>
                         <TableCell className="font-medium">{crypto.symbol}</TableCell>
-                        <TableCell>${(crypto.price !== undefined && crypto.price !== null) ? crypto.price.toLocaleString() : 'N/A'}</TableCell>
-                        <TableCell>${(crypto.volume !== undefined && crypto.volume !== null) ? crypto.volume.toLocaleString() : 'N/A'}</TableCell>
+                        <TableCell>${(crypto.price !== undefined && crypto.price !== null) ? crypto.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : 'N/A'}</TableCell>
+                        <TableCell>${(crypto.volume !== undefined && crypto.volume !== null) ? crypto.volume.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 }) : 'N/A'}</TableCell>
                         <TableCell className="max-w-xs text-sm">{crypto.summary}</TableCell>
                         <TableCell className="max-w-xs text-sm">{crypto.recentNews}</TableCell>
                         <TableCell className="text-right">
                           <Button asChild variant="outline" size="sm">
-                            <Link href={`/charting?symbol=${encodeURIComponent(crypto.symbol.includes(':') ? crypto.symbol : `BINANCE:${crypto.symbol}USDT`)}`} target="_blank" rel="noopener noreferrer">
+                            <Link href={`/charting?symbol=${encodeURIComponent(crypto.symbol.includes(':') ? crypto.symbol : `${crypto.symbol.toUpperCase()}USD`)}`} target="_blank" rel="noopener noreferrer">
                               View Chart <ExternalLink className="ml-2 h-3 w-3" />
                             </Link>
                           </Button>

@@ -20,7 +20,7 @@ declare global {
 }
 
 const formSchema = z.object({
-  cryptocurrency: z.string().min(2, "Symbol too short.").max(20, "Symbol too long (e.g. BINANCE:BTCUSDT).").toUpperCase(),
+  cryptocurrency: z.string().min(2, "Symbol too short.").max(30, "Symbol too long (e.g. BINANCE:BTCUSDT or ETH).").toUpperCase(),
   riskTolerance: z.enum(['low', 'medium', 'high'], { required_error: "Please select a risk tolerance level." }),
 });
 
@@ -28,9 +28,25 @@ type FormData = z.infer<typeof formSchema>;
 
 const TradingViewSymbolOverview: React.FC<{ symbol: string; key?: string }> = React.memo(({ symbol }) => {
   const containerId = `tv-symbol-overview-${symbol.replace(/[^a-zA-Z0-9]/g, "")}-${React.useId().replace(/:/g, "")}`;
+  const [tvSymbol, setTvSymbol] = React.useState(symbol);
 
   React.useEffect(() => {
-    if (typeof window.TradingView === 'undefined' || !document.getElementById(containerId)) {
+    // Attempt to format for TradingView: if no colon, assume a major crypto and append USD or USDT
+    // This is a heuristic and might need refinement for broader symbol support.
+    if (!symbol.includes(':')) {
+        if (['BTC', 'ETH'].includes(symbol.toUpperCase())) {
+            setTvSymbol(`${symbol.toUpperCase()}USD`); // Common for major indices/exchanges
+        } else {
+            setTvSymbol(`${symbol.toUpperCase()}USDT`); // Common for Binance/other exchanges
+        }
+    } else {
+        setTvSymbol(symbol);
+    }
+  }, [symbol]);
+  
+
+  React.useEffect(() => {
+    if (typeof window.TradingView === 'undefined' || !document.getElementById(containerId) || !tvSymbol) {
       return;
     }
     const widgetContainer = document.getElementById(containerId);
@@ -38,7 +54,7 @@ const TradingViewSymbolOverview: React.FC<{ symbol: string; key?: string }> = Re
         widgetContainer.innerHTML = ''; // Clear previous widget
         new window.TradingView.SymbolOverview({
             "symbols": [
-              [symbol]
+              [tvSymbol] // Use the potentially formatted tvSymbol
             ],
             "chartOnly": false,
             "width": "100%",
@@ -76,7 +92,7 @@ const TradingViewSymbolOverview: React.FC<{ symbol: string; key?: string }> = Re
           });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [symbol, containerId]); 
+  }, [tvSymbol, containerId]); // tvSymbol is now a dependency
 
   return <div id={containerId} className="mt-4 w-full h-[300px]" />;
 });
@@ -119,7 +135,7 @@ export default function TradingStrategyForm() {
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="font-headline">AI Trading Strategy Suggestion</CardTitle>
-          <CardDescription>Get an AI-generated trading strategy. Enter a full symbol like "BINANCE:ETHUSDT" or "COINBASE:SOLUSD". The AI will use its market data tool (currently using simulated real-time data from <code>src/services/crypto-data-service.ts</code>).</CardDescription>
+          <CardDescription>Get an AI-generated trading strategy. Enter a symbol like "BINANCE:ETHUSDT" or simply "SOL". The AI will attempt to use its market data tool to fetch live data (via CoinDesk/Messari API configured in <code>src/services/crypto-data-service.ts</code>).</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -129,9 +145,9 @@ export default function TradingStrategyForm() {
                 name="cryptocurrency"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Cryptocurrency Symbol (e.g., BINANCE:BTCUSDT)</FormLabel>
+                    <FormLabel>Cryptocurrency Symbol (e.g., BINANCE:BTCUSDT or ETH)</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., BINANCE:ETHUSDT" {...field} className="bg-background" />
+                      <Input placeholder="e.g., ETH or COINBASE:SOLUSD" {...field} className="bg-background" />
                     </FormControl>
                     <FormDescription>The AI will attempt to fetch current market data using its tool.</FormDescription>
                     <FormMessage />
@@ -181,7 +197,7 @@ export default function TradingStrategyForm() {
          <Alert variant="default" className="border-accent">
             <InfoIcon className="h-4 w-4 !text-accent" />
             <AlertTitle>Ready for Strategy</AlertTitle>
-            <AlertDescription>Enter a cryptocurrency and your risk tolerance to get an AI-suggested trading strategy. Market data for AI analysis is currently fetched using a <strong>simulated data service</strong>. For live data, please integrate a real API in <code>src/services/crypto-data-service.ts</code>.</AlertDescription>
+            <AlertDescription>Enter a cryptocurrency and your risk tolerance to get an AI-suggested trading strategy. Market data for AI analysis is attempted to be fetched live using the CoinDesk/Messari API via <code>src/services/crypto-data-service.ts</code>. If the API fails or a symbol is unsupported, basic mock data may be used as a fallback.</AlertDescription>
         </Alert>
       )}
 
@@ -194,9 +210,9 @@ export default function TradingStrategyForm() {
              </CardDescription>
              <Alert variant="default" className="mt-2 border-primary/50">
                 <DatabaseZap className="h-4 w-4 !text-primary" />
-                <AlertTitle className="text-primary">Simulated Data Notice</AlertTitle>
+                <AlertTitle className="text-primary">Live Data Notice</AlertTitle>
                 <AlertDescription>
-                    The "Fetched Current Price" (if available) is from the AI's tool, which currently uses a <strong>simulated data service</strong> (<code>src/services/crypto-data-service.ts</code>). All other figures (entry, exit, etc.) are illustrative AI suggestions based on this data. For live, accurate market data, the service needs to be connected to a real API provider.
+                    The "Fetched Current Price" (if available) is attempted to be fetched live by the AI's tool using the CoinDesk/Messari API (configured in <code>src/services/crypto-data-service.ts</code>). All other figures (entry, exit, etc.) are illustrative AI suggestions based on this data. If the API call fails or the symbol is not supported by the API, basic mock data may be used or the price may show as 'N/A'.
                 </AlertDescription>
             </Alert>
           </CardHeader>
@@ -208,12 +224,12 @@ export default function TradingStrategyForm() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {suggestion.currentPrice !== undefined && suggestion.currentPrice !== null && (
-                <InfoItem label="Fetched Current Price (AI Tool)" value={`$${suggestion.currentPrice.toLocaleString()}`} />
+                <InfoItem label="Fetched Current Price (AI Tool)" value={`$${suggestion.currentPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 8 })}`} />
               )}
-              <InfoItem label="Suggested Entry Point" value={`$${suggestion.entryPoint.toLocaleString()}`} />
-              <InfoItem label="Suggested Exit Point" value={`$${suggestion.exitPoint.toLocaleString()}`} />
-              <InfoItem label="Suggested Stop-Loss" value={`$${suggestion.stopLossLevel.toLocaleString()}`} />
-              <InfoItem label="Suggested Profit Target" value={`$${suggestion.profitTarget.toLocaleString()}`} />
+              <InfoItem label="Suggested Entry Point" value={`$${suggestion.entryPoint.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 8 })}`} />
+              <InfoItem label="Suggested Exit Point" value={`$${suggestion.exitPoint.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 8 })}`} />
+              <InfoItem label="Suggested Stop-Loss" value={`$${suggestion.stopLossLevel.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 8 })}`} />
+              <InfoItem label="Suggested Profit Target" value={`$${suggestion.profitTarget.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 8 })}`} />
             </div>
           </CardContent>
           <CardFooter>
