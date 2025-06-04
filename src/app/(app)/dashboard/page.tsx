@@ -1,27 +1,73 @@
 "use client";
 
+import * as React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, Search, BotMessageSquare, ListChecks, LineChartIcon } from 'lucide-react';
-import { ResponsiveContainer, LineChart as RechartsLineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
+import { ArrowRight, Search, BotMessageSquare, ListChecks } from 'lucide-react'; // Removed LineChartIcon
 
-const chartData = [
-  { date: 'Jan', value: 60 },
-  { date: 'Feb', value: 80 },
-  { date: 'Mar', value: 70 },
-  { date: 'Apr', value: 90 },
-  { date: 'May', value: 75 },
-  { date: 'Jun', value: 100 },
-];
+// TradingView Market Overview Widget
+const MarketOverviewWidget: React.FC = () => {
+  const containerId = "tradingview-market-overview";
+  React.useEffect(() => {
+    if (document.getElementById(containerId) && typeof TradingView !== 'undefined') {
+      // Ensure the container is empty before appending a new widget
+      const container = document.getElementById(containerId);
+      if (container) {
+        container.innerHTML = ''; // Clear previous widget if any
+      }
+      new TradingView.MarketOverview({
+        "container_id": containerId,
+        "colorTheme": "dark",
+        "dateRange": "12M",
+        "showChart": true,
+        "locale": "en",
+        "largeChartUrl": "",
+        "isTransparent": true,
+        "showSymbolLogo": true,
+        "showFloatingTooltip": false,
+        "width": "100%",
+        "height": "450",
+        "plotLineColorGrowing": "rgba(41, 98, 255, 1)",
+        "plotLineColorFalling": "rgba(255, 71, 71, 1)",
+        "gridLineColor": "rgba(240, 243, 250, 0)",
+        "scaleFontColor": "rgba(120, 123, 134, 1)",
+        "belowLineFillColorGrowing": "rgba(41, 98, 255, 0.12)",
+        "belowLineFillColorFalling": "rgba(255, 71, 71, 0.12)",
+        "belowLineFillColorGrowingBottom": "rgba(41, 98, 255, 0)",
+        "belowLineFillColorFallingBottom": "rgba(255, 71, 71, 0)",
+        "symbolActiveColor": "rgba(41, 98, 255, 0.12)",
+        "tabs": [
+          {
+            "title": "Indices",
+            "symbols": [
+              { "s": "FOREXCOM:SPXUSD", "d": "S&P 500" },
+              { "s": "FOREXCOM:NSXUSD", "d": "US 100" },
+              { "s": "BITSTAMP:BTCUSD", "d": "Bitcoin" },
+              { "s": "BITSTAMP:ETHUSD", "d": "Ethereum" }
+            ],
+            "originalTitle": "Indices"
+          },
+          {
+            "title": "Cryptocurrencies",
+            "symbols": [
+              { "s": "BITSTAMP:BTCUSD", "d": "Bitcoin" },
+              { "s": "BITSTAMP:ETHUSD", "d": "Ethereum" },
+              { "s": "BINANCE:SOLUSD", "d": "Solana" },
+              { "s": "BINANCE:ADAUSD", "d": "Cardano" },
+              { "s": "BINANCE:XRPUSD", "d": "Ripple" },
+              { "s": "BINANCE:DOGEUSD", "d": "Dogecoin" }
+            ],
+            "originalTitle": "Cryptocurrencies"
+          }
+        ]
+      });
+    }
+  }, []);
 
-const chartConfig = {
-  value: {
-    label: "Market Trend",
-    color: "hsl(var(--accent))",
-  },
-} as const;
+  return <div id={containerId} style={{ height: '450px', width: '100%' }} />;
+};
+
 
 export default function DashboardPage() {
   return (
@@ -81,21 +127,14 @@ export default function DashboardPage() {
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="font-headline flex items-center gap-2">
-            <LineChartIcon className="h-6 w-6 text-accent" />
+            {/* Using a generic icon as LineChartIcon might imply a custom chart */}
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 text-accent"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
             Market Overview
           </CardTitle>
-          <CardDescription>A quick glance at the current market trend (mock data).</CardDescription>
+          <CardDescription>Live market data powered by TradingView.</CardDescription>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={chartConfig} className="h-[300px] w-full">
-            <RechartsLineChart data={chartData} margin={{ left: 12, right: 12, top: 5, bottom: 5 }}>
-              <CartesianGrid vertical={false} strokeDasharray="3 3" />
-              <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
-              <YAxis tickLine={false} axisLine={false} tickMargin={8} />
-              <Tooltip cursor={{ fill: 'hsl(var(--card))' }} content={<ChartTooltipContent />} />
-              <Line dataKey="value" type="monotone" stroke="var(--color-value)" strokeWidth={2} dot={false} />
-            </RechartsLineChart>
-          </ChartContainer>
+          <MarketOverviewWidget />
         </CardContent>
       </Card>
     </div>

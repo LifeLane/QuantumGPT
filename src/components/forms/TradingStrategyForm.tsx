@@ -4,13 +4,13 @@ import * as React from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { suggestTradingStrategy, type SuggestTradingStrategyOutput } from "@/ai/flows/ai-trading-strategy-suggestion"; // Removed unused SuggestTradingStrategyInput
+import { suggestTradingStrategy, type SuggestTradingStrategyOutput } from "@/ai/flows/ai-trading-strategy-suggestion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, AlertTriangle } from "lucide-react";
+import { Loader2, AlertTriangle, InfoIcon } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 const formSchema = z.object({
@@ -41,7 +41,8 @@ export default function TradingStrategyForm() {
       const output = await suggestTradingStrategy(data);
       setSuggestion(output);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "An unknown error occurred.");
+      console.error("Trading Strategy Error:", e);
+      setError(e instanceof Error ? e.message : "An unknown error occurred while generating the strategy. The AI model might have failed to process the request or use tools correctly.");
     } finally {
       setIsLoading(false);
     }
@@ -52,7 +53,7 @@ export default function TradingStrategyForm() {
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="font-headline">AI Trading Strategy Suggestion</CardTitle>
-          <CardDescription>Get an AI-generated trading strategy for a specific cryptocurrency.</CardDescription>
+          <CardDescription>Get an AI-generated trading strategy for a specific cryptocurrency, using (simulated) real-time data.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -66,7 +67,7 @@ export default function TradingStrategyForm() {
                     <FormControl>
                       <Input placeholder="e.g., ETH, SOL" {...field} className="bg-background" />
                     </FormControl>
-                    <FormDescription>Enter the ticker symbol (e.g., BTC).</FormDescription>
+                    <FormDescription>Enter the ticker symbol (e.g., BTC). The AI will attempt to fetch its current price.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -110,10 +111,21 @@ export default function TradingStrategyForm() {
         </Alert>
       )}
 
+      {!isLoading && suggestion === null && !error && (
+         <Alert variant="default" className="border-blue-500 text-blue-700 dark:border-blue-400 dark:text-blue-300">
+            <InfoIcon className="h-4 w-4 !text-blue-500 dark:!text-blue-400" />
+            <AlertTitle>Ready for Strategy</AlertTitle>
+            <AlertDescription>Enter a cryptocurrency and your risk tolerance to get an AI-suggested trading strategy. Note: Real-time data fetching is simulated.</AlertDescription>
+        </Alert>
+      )}
+
       {suggestion && (
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="font-headline">Suggested Trading Strategy for {form.getValues("cryptocurrency")}</CardTitle>
+             {suggestion.currentPrice !== undefined && suggestion.currentPrice !== null && (
+              <CardDescription>Based on current price of ${suggestion.currentPrice.toLocaleString()} (simulated real-time data).</CardDescription>
+            )}
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
@@ -121,10 +133,13 @@ export default function TradingStrategyForm() {
               <p className="text-muted-foreground">{suggestion.strategyExplanation}</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <InfoItem label="Entry Point" value={`$${suggestion.entryPoint.toLocaleString()}`} />
-              <InfoItem label="Exit Point" value={`$${suggestion.exitPoint.toLocaleString()}`} />
-              <InfoItem label="Stop-Loss Level" value={`$${suggestion.stopLossLevel.toLocaleString()}`} />
-              <InfoItem label="Profit Target" value={`$${suggestion.profitTarget.toLocaleString()}`} />
+              {suggestion.currentPrice !== undefined && suggestion.currentPrice !== null && (
+                <InfoItem label="Fetched Current Price" value={`$${suggestion.currentPrice.toLocaleString()}`} />
+              )}
+              <InfoItem label="Suggested Entry Point" value={`$${suggestion.entryPoint.toLocaleString()}`} />
+              <InfoItem label="Suggested Exit Point" value={`$${suggestion.exitPoint.toLocaleString()}`} />
+              <InfoItem label="Suggested Stop-Loss" value={`$${suggestion.stopLossLevel.toLocaleString()}`} />
+              <InfoItem label="Suggested Profit Target" value={`$${suggestion.profitTarget.toLocaleString()}`} />
             </div>
           </CardContent>
           <CardFooter>
@@ -148,4 +163,3 @@ function InfoItem({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
-

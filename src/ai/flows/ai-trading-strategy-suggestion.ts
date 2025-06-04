@@ -12,6 +12,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { getCryptoMarketDataTool, type MarketData } from '@/ai/tools/market-data-tool';
 
 const SuggestTradingStrategyInputSchema = z.object({
   cryptocurrency: z.string().describe('The ticker symbol of the cryptocurrency to analyze (e.g., BTC).'),
@@ -20,15 +21,16 @@ const SuggestTradingStrategyInputSchema = z.object({
 export type SuggestTradingStrategyInput = z.infer<typeof SuggestTradingStrategyInputSchema>;
 
 const SuggestTradingStrategyOutputSchema = z.object({
-  strategyExplanation: z.string().describe('A detailed explanation of the suggested trading strategy.'),
-  entryPoint: z.number().describe('An illustrative suggested entry point for the trade, based on the strategy. Not live financial advice.'),
-  exitPoint: z.number().describe('An illustrative suggested exit point for the trade, based on the strategy. Not live financial advice.'),
-  stopLossLevel: z.number().describe('An illustrative suggested stop-loss level for the trade, based on the strategy. Not live financial advice.'),
-  profitTarget: z.number().describe('An illustrative profit target for the trade, based on the strategy. Not live financial advice.'),
+  strategyExplanation: z.string().describe('A detailed explanation of the suggested trading strategy, considering the current market price.'),
+  currentPrice: z.number().optional().describe('The current market price of the cryptocurrency, obtained via the market data tool.'),
+  entryPoint: z.number().describe('A suggested entry point for the trade, based on the strategy and current price.'),
+  exitPoint: z.number().describe('A suggested exit point for the trade, based on the strategy.'),
+  stopLossLevel: z.number().describe('A suggested stop-loss level for the trade, based on the strategy.'),
+  profitTarget: z.number().describe('A profit target for the trade, based on the strategy.'),
   disclaimer: z
     .string()
     .describe(
-      'A disclaimer emphasizing the risks involved in trading, the illustrative nature of the provided figures, and the importance of consulting a financial expert.'
+      'A disclaimer emphasizing the risks involved in trading, the illustrative nature of AI-generated figures (even if based on fetched current price), and the importance of consulting a financial expert.'
     ),
 });
 export type SuggestTradingStrategyOutput = z.infer<typeof SuggestTradingStrategyOutputSchema>;
@@ -39,29 +41,39 @@ export async function suggestTradingStrategy(input: SuggestTradingStrategyInput)
 
 const prompt = ai.definePrompt({
   name: 'suggestTradingStrategyPrompt',
-  input: {schema: SuggestTradingStrategyInputSchema},
+  input: {schema: z.object({ // Prompt input includes fetched market data
+    cryptocurrency: SuggestTradingStrategyInputSchema.shape.cryptocurrency,
+    riskTolerance: SuggestTradingStrategyInputSchema.shape.riskTolerance,
+    marketData: MarketDataSchema.nullable().describe("Current market data for the cryptocurrency. This will be fetched by a tool prior to calling you."),
+  })},
   output: {schema: SuggestTradingStrategyOutputSchema},
   prompt: `You are an AI-powered trading strategy advisor.
 
-You will suggest an optimal trading strategy for the selected cryptocurrency based on historical data concepts, general market trends, and user-defined risk tolerance. The numerical values for entry/exit points, stop-loss, and profit targets should be considered as illustrative examples derived from the strategy, not as live financial advice or real-time market data.
+You will suggest an optimal trading strategy for the selected cryptocurrency based on its current market data (provided as 'marketData'), general market trend concepts, and user-defined risk tolerance.
+The current price is: {{#if marketData.price}}{{marketData.price}}{{else}}not available{{/if}}.
+The 24h volume is: {{#if marketData.volume24h}}{{marketData.volume24h}}{{else}}not available{{/if}}.
+The 24h price change is: {{#if marketData.priceChange24hPercent}}{{marketData.priceChange24hPercent}}%{{else}}not available{{/if}}.
 
 Cryptocurrency: {{{cryptocurrency}}}
 Risk Tolerance: {{{riskTolerance}}}
 
 Consider the following:
-- General historical price data concepts and chart patterns (do not use real-time data)
-- General current market trends and news sentiment concepts (do not use real-time data)
-- User's risk tolerance (low, medium, high)
+- The provided current market data (price, volume, 24h change). If data is not available, state that and make a more general suggestion.
+- General historical price data concepts and chart patterns (do not use real-time data beyond what is provided).
+- General current market trends and news sentiment concepts (do not use real-time data).
+- User's risk tolerance (low, medium, high).
 
 Provide the following:
-- Strategy Explanation: A clear and concise explanation of the suggested strategy.
-- Entry Point: An *illustrative recommended price* to enter the trade based on the strategy.
-- Exit Point: An *illustrative recommended price* to exit the trade based on the strategy.
-- Stop-Loss Level: An *illustrative price level* at which to set a stop-loss order based on the strategy.
-- Profit Target: An *illustrative price level* at which to take profit based on the strategy.
-- Disclaimer: A standard disclaimer about the risks of trading and the illustrative nature of the provided figures.
+- Strategy Explanation: A clear and concise explanation of the suggested strategy, considering the current price.
+- Current Price: The current price that was fetched (if available).
+- Entry Point: A recommended price to enter the trade based on the strategy and current price.
+- Exit Point: A recommended price to exit the trade based on the strategy.
+- Stop-Loss Level: A price level at which to set a stop-loss order based on the strategy.
+- Profit Target: A price level at which to take profit based on the strategy.
+- Disclaimer: A standard disclaimer about the risks of trading and the nature of AI-generated advice.
 
-Format your response as a JSON object with the fields: strategyExplanation, entryPoint, exitPoint, stopLossLevel, profitTarget, and disclaimer.
+Format your response as a JSON object with the fields: strategyExplanation, currentPrice, entryPoint, exitPoint, stopLossLevel, profitTarget, and disclaimer.
+If current market data was not available, the currentPrice field can be omitted or set to null, and your strategy should reflect this lack of live data.
 `,
 });
 
@@ -70,10 +82,31 @@ const suggestTradingStrategyFlow = ai.defineFlow(
     name: 'suggestTradingStrategyFlow',
     inputSchema: SuggestTradingStrategyInputSchema,
     outputSchema: SuggestTradingStrategyOutputSchema,
+    tools: [getCryptoMarketDataTool],
   },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+  async (input: SuggestTradingStrategyInput) => {
+    // Step 1: Fetch market data using the tool
+    let marketData: MarketData | null = null;
+    try {
+      marketData = await getCryptoMarketDataTool({symbol: input.cryptocurrency});
+    } catch (toolError) {
+      console.error(`Error calling getCryptoMarketDataTool for ${input.cryptocurrency}:`, toolError);
+      // Proceed without market data, the prompt is designed to handle this
+    }
+
+    // Step 2: Call the prompt with the original input + fetched market data
+    const {output} = await prompt({
+        ...input,
+        marketData: marketData,
+    });
+    
+    if (!output) {
+        throw new Error("The AI model did not return the expected output format for trading strategy.");
+    }
+    // Ensure currentPrice is set in the output if marketData was available
+    if (marketData && marketData.price && output.currentPrice === undefined) {
+        output.currentPrice = marketData.price;
+    }
+    return output;
   }
 );
-

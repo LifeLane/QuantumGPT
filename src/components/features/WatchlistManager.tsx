@@ -11,14 +11,14 @@ import { useToast } from "@/hooks/use-toast";
 interface WatchlistItem {
   id: string;
   symbol: string;
-  price: number;
-  change: number;
+  price: number; // Will be updated by "real-time" simulation
+  change: number; // Will be updated by "real-time" simulation
 }
 
+// Initial watchlist is empty; prices would come from a real-time service.
 const initialWatchlist: WatchlistItem[] = [
-  { id: "btc", symbol: "BTC", price: 68500.75, change: 1.25 },
-  { id: "eth", symbol: "ETH", price: 3500.20, change: -0.50 },
-  { id: "sol", symbol: "SOL", price: 170.10, change: 2.75 },
+    { id: "btc", symbol: "BTC", price: 0, change: 0 },
+    { id: "eth", symbol: "ETH", price: 0, change: 0 },
 ];
 
 export default function WatchlistManager() {
@@ -27,13 +27,31 @@ export default function WatchlistManager() {
   const { toast } = useToast();
 
   React.useEffect(() => {
+    // Placeholder for fetching initial prices from a real-time service
+    // For now, we just simulate updates
+    const fetchInitialPrices = async () => {
+        // In a real app, you'd call your cryptoDataService here
+        // For demo, we'll assign random start prices to items with price 0
+        setWatchlist(currentWatchlist => 
+            currentWatchlist.map(item => 
+                item.price === 0 
+                ? { 
+                    ...item, 
+                    price: parseFloat((Math.random() * 60000 + 1000).toFixed(2)), // Random price between 1k and 61k
+                    change: parseFloat(((Math.random() - 0.5) * 10).toFixed(2)) 
+                  } 
+                : item
+            )
+        );
+    };
+    fetchInitialPrices();
+
     const intervalId = setInterval(() => {
       setWatchlist(currentWatchlist =>
         currentWatchlist.map(item => {
-          // Simulate price change: +/- 0.05% to 0.5% of current price
+          if (item.price === 0) return item; // Don't update if price hasn't been initialized
           const priceChangePercent = (Math.random() - 0.5) * 0.01; // Max 0.5% change
           const newPrice = item.price * (1 + priceChangePercent);
-          // Simulate 24h change: a random number between -5% and 5%
           const newChange = (Math.random() - 0.5) * 10; 
           return {
             ...item,
@@ -42,7 +60,7 @@ export default function WatchlistManager() {
           };
         })
       );
-    }, 3000); // Update every 3 seconds
+    }, 3000); 
 
     return () => clearInterval(intervalId);
   }, []);
@@ -54,16 +72,17 @@ export default function WatchlistManager() {
       toast({ title: "Error", description: "Symbol cannot be empty.", variant: "destructive" });
       return;
     }
-    if (watchlist.some(item => item.symbol.toUpperCase() === newSymbol.trim().toUpperCase())) {
-      toast({ title: "Info", description: `${newSymbol.toUpperCase()} is already in your watchlist.`, variant: "default" });
+    const symbolUpper = newSymbol.trim().toUpperCase();
+    if (watchlist.some(item => item.symbol.toUpperCase() === symbolUpper)) {
+      toast({ title: "Info", description: `${symbolUpper} is already in your watchlist.`, variant: "default" });
       setNewSymbol("");
       return;
     }
     
     const newItem: WatchlistItem = {
-      id: newSymbol.toLowerCase().trim(),
-      symbol: newSymbol.toUpperCase().trim(),
-      price: parseFloat((Math.random() * 70000 + 100).toFixed(2)), // Mock price between $100 and $70100
+      id: symbolUpper.toLowerCase(),
+      symbol: symbolUpper,
+      price: parseFloat((Math.random() * 70000 + 100).toFixed(2)), // Assign a mock price immediately for demo
       change: parseFloat(((Math.random() - 0.5) * 10).toFixed(2)), // Mock change
     };
     setWatchlist(prevWatchlist => [...prevWatchlist, newItem]);
@@ -83,7 +102,7 @@ export default function WatchlistManager() {
     <Card className="shadow-lg">
       <CardHeader>
         <CardTitle className="font-headline">Your Watchlist</CardTitle>
-        <CardDescription>Monitor your preferred cryptocurrencies (prices update every 3s - simulation).</CardDescription>
+        <CardDescription>Monitor your preferred cryptocurrencies. Prices update every 3s (simulation - real integration needed).</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <form onSubmit={addCryptoToWatchlist} className="flex gap-2">
@@ -119,11 +138,11 @@ export default function WatchlistManager() {
                        <LineChartIcon className="h-5 w-5 text-accent" />
                       {item.symbol}
                     </TableCell>
-                    <TableCell className="text-right">${item.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                    <TableCell className="text-right">${item.price === 0 ? 'Loading...' : item.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                     <TableCell className={`text-right font-medium ${item.change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                       <span className="inline-flex items-center">
                         {item.change >= 0 ? <TrendingUp className="h-4 w-4 mr-1" /> : <TrendingDown className="h-4 w-4 mr-1" />}
-                        {item.change.toFixed(2)}%
+                        {item.price === 0 ? '...' : `${item.change.toFixed(2)}%`}
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
