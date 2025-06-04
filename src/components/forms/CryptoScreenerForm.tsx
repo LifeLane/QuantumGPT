@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, AlertTriangle, InfoIcon, ExternalLink } from "lucide-react";
+import { Loader2, AlertTriangle, InfoIcon, ExternalLink, DatabaseZap } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -53,7 +53,7 @@ export default function CryptoScreenerForm() {
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="font-headline">AI Crypto Screener</CardTitle>
-          <CardDescription>Define your criteria. The AI will attempt to use its market data tool (simulated real-time data).</CardDescription>
+          <CardDescription>Define your criteria. The AI will attempt to use its market data tool (currently using simulated real-time data from <code>src/services/crypto-data-service.ts</code>).</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -97,7 +97,7 @@ export default function CryptoScreenerForm() {
          <Alert variant="default" className="border-accent">
             <InfoIcon className="h-4 w-4 !text-accent" />
             <AlertTitle>Ready to Screen</AlertTitle>
-            <AlertDescription>Enter your criteria above and click "Screen Cryptos" to see AI-powered results. Market data is fetched by an AI tool (simulated).</AlertDescription>
+            <AlertDescription>Enter your criteria above and click "Screen Cryptos" to see AI-powered results. Market data for AI analysis is currently fetched using a <strong>simulated data service</strong>. For live data, please integrate a real API in <code>src/services/crypto-data-service.ts</code>.</AlertDescription>
         </Alert>
       )}
 
@@ -107,8 +107,15 @@ export default function CryptoScreenerForm() {
           <CardHeader>
             <CardTitle className="font-headline">Screening Results</CardTitle>
             <CardDescription>
-              The following cryptocurrencies were identified. Prices and volumes are from the AI's data tool (simulated).
+              The following cryptocurrencies were identified. 
             </CardDescription>
+             <Alert variant="default" className="mt-2 border-primary/50">
+                <DatabaseZap className="h-4 w-4 !text-primary" />
+                <AlertTitle className="text-primary">Simulated Data Notice</AlertTitle>
+                <AlertDescription>
+                    Prices and volumes displayed below are from the AI's analysis tool, which currently uses a <strong>simulated data service</strong> (<code>src/services/crypto-data-service.ts</code>). For live, accurate market data, this service needs to be connected to a real API provider.
+                </AlertDescription>
+            </Alert>
           </CardHeader>
           <CardContent>
             {results.length === 0 ? (
@@ -135,9 +142,6 @@ export default function CryptoScreenerForm() {
                         <TableCell className="max-w-xs text-sm">{crypto.summary}</TableCell>
                         <TableCell className="max-w-xs text-sm">{crypto.recentNews}</TableCell>
                         <TableCell className="text-right">
-                           {/* Ensure symbol is properly encoded for URL. Assume symbol could be like "BINANCE:BTCUSDT" or just "BTC" */}
-                           {/* For TradingView, it often needs exchange prefix. If not provided, it might pick a default. */}
-                           {/* The crypto.symbol from AI might not always be TradingView ready. We pass it as is. */}
                           <Button asChild variant="outline" size="sm">
                             <Link href={`/charting?symbol=${encodeURIComponent(crypto.symbol.includes(':') ? crypto.symbol : `BINANCE:${crypto.symbol}USDT`)}`} target="_blank" rel="noopener noreferrer">
                               View Chart <ExternalLink className="ml-2 h-3 w-3" />
