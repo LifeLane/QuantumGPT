@@ -6,12 +6,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { BarChart3, Lightbulb, Settings, Bot } from 'lucide-react'; // Removed Search icon
+import MarketScroll from '@/components/features/MarketScroll';
 
 export default function DashboardPage() {
   // const userName = "Quantum User"; // Replace with actual user data later
 
   return (
     <div className="flex flex-col gap-8">
+      {/* Add the MarketScroll component */}
+      <MarketScroll />
       <div>
         <h1 className="text-3xl font-headline font-semibold">
           {/* Welcome back, {userName}! */}

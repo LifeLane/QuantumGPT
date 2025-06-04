@@ -29,13 +29,21 @@ const MatrixRain: React.FC = () => {
     const nums = '0123456789';
     const characters = katakana + latin + nums;
 
+    // Predefined colors for the matrix rain
+    const colors = [
+      '#00FF00', // Green
+      '#00FFFF', // Cyan
+      '#0000FF', // Blue
+      '#FF00FF', // Magenta
+      '#FFFF00', // Yellow
+    ];
+
     let animationFrameId: number;
 
     const draw = () => {
-      ctx.fillStyle = 'rgba(26, 28, 33, 0.1)'; // Slightly transparent dark background to create fading effect, matches sidebar bg
+      ctx.fillStyle = 'rgba(26, 28, 33, 0.05)'; // Slightly transparent dark background to create fading effect
       ctx.fillRect(0, 0, width, height);
 
-      ctx.fillStyle = 'hsl(var(--accent))'; // Use accent color (vibrant teal/green)
       ctx.font = '15px monospace';
 
       for (let i = 0; i < drops.length; i++) {
@@ -43,6 +51,8 @@ const MatrixRain: React.FC = () => {
         ctx.fillText(text, i * 20, drops[i] * 20);
 
         if (drops[i] * 20 > height && Math.random() > 0.975) {
+          // Randomly select a color for a new drop
+          ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
           drops[i] = 0;
         }
         drops[i]++;

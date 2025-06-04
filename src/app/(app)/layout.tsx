@@ -33,6 +33,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import MatrixRain from "@/components/effects/MatrixRain";
 
+import Footer from "@/components/layout/Footer";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -136,9 +137,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <main className="flex-1 overflow-y-auto p-6 z-10 relative"> {/* Added z-index and relative for main content */}
           {children}
         </main>
-        <footer className="p-6 border-t text-center text-xs text-muted-foreground z-10 relative bg-background/80 backdrop-blur-sm"> {/* Added z-index, relative and bg for footer */}
-            &copy; {new Date().getFullYear()} Quantum GPT by BlockSmithAI. All rights reserved.
-        </footer>
+        <Footer />
       </SidebarInset>
     </SidebarProvider>
   );
