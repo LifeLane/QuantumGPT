@@ -1,9 +1,3 @@
-import TradingStrategyForm from '@/components/forms/TradingStrategyForm';
-
-export default function StrategyPage() {
-  return (
-    <div className="container mx-auto py-8">
-      <TradingStrategyForm />
-    </div>
-  );
-}
+// This file is intentionally blank.
+// The page /app/(app)/strategy/page.tsx has been removed as part of the user authentication restructure.
+// Features like "AI Strategy" will be re-integrated later for authenticated users.

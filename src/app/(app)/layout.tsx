@@ -4,6 +4,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+// import { useRouter } from "next/navigation"; // For logout
 import {
   SidebarProvider,
   Sidebar,
@@ -19,7 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { LogoIcon } from "@/components/icons/LogoIcon";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Home, Search, BotMessageSquare, ListChecks, Bell, LineChartIcon, Settings, LogOut } from "lucide-react";
+import { Home, Settings, LogOut, LayoutDashboard } from "lucide-react"; // Simplified icons
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -29,18 +30,40 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
+
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: Home },
-  { href: "/screener", label: "Crypto Screener", icon: Search },
-  { href: "/strategy", label: "AI Strategy", icon: BotMessageSquare },
-  { href: "/watchlist", label: "Watchlist", icon: ListChecks },
-  { href: "/alerts", label: "Price Alerts", icon: Bell },
-  { href: "/charting", label: "Charting Tools", icon: LineChartIcon },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  // { href: "/screener", label: "Crypto Screener", icon: Search }, // Re-add when auth is complete
+  // { href: "/strategy", label: "AI Strategy", icon: BotMessageSquare }, // Re-add when auth is complete
+  // { href: "/watchlist", label: "Watchlist", icon: ListChecks }, // Re-add when auth is complete
+  // { href: "/alerts", label: "Price Alerts", icon: Bell }, // Re-add when auth is complete
+  // { href: "/charting", label: "Charting Tools", icon: LineChartIcon }, // Re-add when auth is complete
+  { href: "/account/settings", label: "Account Settings", icon: Settings },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { toast } = useToast();
+  // const router = useRouter(); // For logout
+
+  const handleLogout = async () => {
+    // Simulate logout
+    try {
+      const response = await fetch('/api/auth/logout', { method: 'POST' });
+      const result = await response.json();
+      if (response.ok) {
+        toast({ title: "Logged Out", description: "You have been successfully logged out." });
+        // router.push('/login'); // Redirect to login after logout
+         console.log("Logout successful (simulated)", result);
+      } else {
+        toast({ title: "Logout Failed", description: result.message || "Could not log out.", variant: "destructive" });
+      }
+    } catch (error) {
+        toast({ title: "Logout Error", description: "An unexpected error occurred.", variant: "destructive"});
+    }
+  };
 
   return (
     <SidebarProvider defaultOpen>
@@ -82,17 +105,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   <AvatarImage src="https://placehold.co/40x40.png" alt="Quantum User" data-ai-hint="user avatar" />
                   <AvatarFallback>QG</AvatarFallback>
                 </Avatar>
-                <span className="font-medium group-data-[collapsible=icon]:hidden">Quantum User</span>
+                {/* In a real app, display actual user name */}
+                <span className="font-medium group-data-[collapsible=icon]:hidden">Quantum User</span> 
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent side="top" align="start" className="w-56">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Settings</span>
+              <DropdownMenuItem asChild>
+                <Link href="/account/settings">
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+                </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>Log out</span>
               </DropdownMenuItem>
@@ -103,10 +129,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <SidebarInset className="flex flex-col">
         <header className="sticky top-0 z-10 flex h-14 items-center justify-between gap-4 border-b bg-background/80 backdrop-blur-sm px-6 md:justify-end">
           <SidebarTrigger className="md:hidden" />
+          {/* User info or search could go here in header */}
         </header>
         <main className="flex-1 overflow-y-auto p-6">
           {children}
         </main>
+        <footer className="p-6 border-t text-center text-xs text-muted-foreground">
+            &copy; {new Date().getFullYear()} Quantum GPT by BlockSmithAI. All rights reserved.
+        </footer>
       </SidebarInset>
     </SidebarProvider>
   );
