@@ -28,11 +28,11 @@ const CryptoScreenerOutputSchema = z.object({
     z.object({
       symbol: z.string().describe('The cryptocurrency symbol.'),
       summary: z.string().describe('A concise summary of why the crypto was selected based on the criteria.'),
-      price: z.number().optional().describe('The current price of the cryptocurrency, obtained using the market data tool. May be missing if data is unavailable.'),
-      volume: z.number().optional().describe('The 24h trading volume of the cryptocurrency, obtained using the market data tool. May be missing if data is unavailable.'),
+      price: z.number().optional().describe('The current price of the cryptocurrency, as reported by the market data tool. Omitted if the tool could not fetch data or data was unavailable.'),
+      volume: z.number().optional().describe('The 24h trading volume of the cryptocurrency, as reported by the market data tool. Omitted if the tool could not fetch data or data was unavailable.'),
       recentNews: z.string().describe('A summary of recent news or key developments about the cryptocurrency, relevant to the criteria. This can be based on general knowledge if not directly fetched.'),
     })
-  ).describe('A list of cryptocurrencies that match the specified criteria, with current data points obtained via tools where possible.'),
+  ).describe('A list of cryptocurrencies that match the specified criteria. Price and volume are obtained via the market data tool.'),
 });
 export type CryptoScreenerOutput = z.infer<typeof CryptoScreenerOutputSchema>;
 
@@ -48,14 +48,16 @@ const prompt = ai.definePrompt({
   prompt: `You are an expert in cryptocurrency analysis.
 
 Screen cryptocurrencies based on the criteria provided by the user.
-For each cryptocurrency you identify as potentially matching the criteria, YOU MUST use the 'getCryptoMarketData' tool to fetch its current price and 24-hour volume.
-If the tool returns null or fails for a symbol, you can state that live data couldn't be fetched for it but still include it if it strongly matches other criteria, noting the data absence. If data is absent, omit the price and volume fields for that specific cryptocurrency in your JSON response.
+For each cryptocurrency you identify as potentially matching the criteria, YOU MUST use the 'getCryptoMarketData' tool to fetch its current market data (price and 24-hour volume).
+
+Your response for 'price' and 'volume' for each crypto MUST be the exact values returned by this tool. Do not invent or modify these values.
+If the tool returns null or fails for a symbol (meaning data is unavailable from the tool), state this clearly in your summary for that crypto and omit the 'price' and 'volume' fields in the JSON output for that specific cryptocurrency.
 
 Present the results in a structured format. For each cryptocurrency, include:
 - its symbol
 - a concise summary of why it meets the criteria
-- its current price (from the tool, if available)
-- its 24h volume (from the tool, if available)
+- its current price (MUST be from the tool; if unavailable from tool, omit this field)
+- its 24h volume (MUST be from the tool; if unavailable from tool, omit this field)
 - a brief summary of recent news or developments relevant to the criteria (this can be based on your general knowledge if not directly fetched by a tool).
 
 Criteria: {{{criteria}}}
@@ -81,3 +83,4 @@ const cryptoScreenerFlow = ai.defineFlow(
     return output;
   }
 );
+
