@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, AlertTriangle, InfoIcon, ExternalLink, DatabaseZap } from "lucide-react";
+import { Loader2, AlertTriangle, InfoIcon, ExternalLink, DatabaseZap, Bitcoin } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -53,7 +53,7 @@ export default function CryptoScreenerForm() {
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="font-headline">AI Crypto Screener</CardTitle>
-          <CardDescription>Define your criteria. The AI will attempt to use its market data tool to fetch live data (via CoinDesk/Messari API provided in <code>src/services/crypto-data-service.ts</code>).</CardDescription>
+          <CardDescription>Define your criteria. The AI will attempt to use its market data tool. Live Bitcoin (BTC) price is fetched from CoinDesk BPI. Other cryptos currently use simulated data via <code>src/services/crypto-data-service.ts</code>.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -97,7 +97,7 @@ export default function CryptoScreenerForm() {
          <Alert variant="default" className="border-accent">
             <InfoIcon className="h-4 w-4 !text-accent" />
             <AlertTitle>Ready to Screen</AlertTitle>
-            <AlertDescription>Enter your criteria above and click "Screen Cryptos" to see AI-powered results. Market data for AI analysis is attempted to be fetched live using the CoinDesk/Messari API via <code>src/services/crypto-data-service.ts</code>. If the API fails or a symbol is unsupported, basic mock data may be used as a fallback.</AlertDescription>
+            <AlertDescription>Enter your criteria above. For Bitcoin (BTC), price data is fetched live from CoinDesk BPI. For other cryptocurrencies, the AI uses simulated market data (from <code>src/services/crypto-data-service.ts</code>). To use real-time data for all assets, integrate a comprehensive market data API into that service file.</AlertDescription>
         </Alert>
       )}
 
@@ -106,14 +106,13 @@ export default function CryptoScreenerForm() {
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="font-headline">Screening Results</CardTitle>
-            <CardDescription>
-              The following cryptocurrencies were identified. 
-            </CardDescription>
              <Alert variant="default" className="mt-2 border-primary/50">
-                <DatabaseZap className="h-4 w-4 !text-primary" />
-                <AlertTitle className="text-primary">Live Data Notice</AlertTitle>
+                <Bitcoin className="h-4 w-4 !text-primary" />
+                <AlertTitle className="text-primary">Data Source Notice</AlertTitle>
                 <AlertDescription>
-                    Prices and volumes displayed below are attempted to be fetched live by the AI's analysis tool using the CoinDesk/Messari API (configured in <code>src/services/crypto-data-service.ts</code>). If the API call fails for a specific token, or if the API key is invalid/not configured, the system may fall back to basic mock data or show 'N/A'.
+                    Bitcoin (BTC) price is fetched live from CoinDesk BPI by the AI's tool. 24h volume and 24h change are not provided by this source for BTC.
+                    For all other cryptocurrencies, prices and volumes displayed below are currently from a <strong>simulated data service</strong> (<code>src/services/crypto-data-service.ts</code>).
+                    For fully live data across all assets, this service needs to be integrated with a comprehensive market data API.
                 </AlertDescription>
             </Alert>
           </CardHeader>

@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, AlertTriangle, InfoIcon, LineChart, DatabaseZap } from "lucide-react";
+import { Loader2, AlertTriangle, InfoIcon, LineChart, Bitcoin } from "lucide-react"; // Removed DatabaseZap, added Bitcoin
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 // Ensure TradingView is declared globally
@@ -31,13 +31,11 @@ const TradingViewSymbolOverview: React.FC<{ symbol: string; key?: string }> = Re
   const [tvSymbol, setTvSymbol] = React.useState(symbol);
 
   React.useEffect(() => {
-    // Attempt to format for TradingView: if no colon, assume a major crypto and append USD or USDT
-    // This is a heuristic and might need refinement for broader symbol support.
     if (!symbol.includes(':')) {
         if (['BTC', 'ETH'].includes(symbol.toUpperCase())) {
-            setTvSymbol(`${symbol.toUpperCase()}USD`); // Common for major indices/exchanges
+            setTvSymbol(`${symbol.toUpperCase()}USD`);
         } else {
-            setTvSymbol(`${symbol.toUpperCase()}USDT`); // Common for Binance/other exchanges
+            setTvSymbol(`${symbol.toUpperCase()}USDT`);
         }
     } else {
         setTvSymbol(symbol);
@@ -51,10 +49,10 @@ const TradingViewSymbolOverview: React.FC<{ symbol: string; key?: string }> = Re
     }
     const widgetContainer = document.getElementById(containerId);
     if (widgetContainer) {
-        widgetContainer.innerHTML = ''; // Clear previous widget
+        widgetContainer.innerHTML = ''; 
         new window.TradingView.SymbolOverview({
             "symbols": [
-              [tvSymbol] // Use the potentially formatted tvSymbol
+              [tvSymbol] 
             ],
             "chartOnly": false,
             "width": "100%",
@@ -92,7 +90,7 @@ const TradingViewSymbolOverview: React.FC<{ symbol: string; key?: string }> = Re
           });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tvSymbol, containerId]); // tvSymbol is now a dependency
+  }, [tvSymbol, containerId]);
 
   return <div id={containerId} className="mt-4 w-full h-[300px]" />;
 });
@@ -135,7 +133,7 @@ export default function TradingStrategyForm() {
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="font-headline">AI Trading Strategy Suggestion</CardTitle>
-          <CardDescription>Get an AI-generated trading strategy. Enter a symbol like "BINANCE:ETHUSDT" or simply "SOL". The AI will attempt to use its market data tool to fetch live data (via CoinDesk/Messari API configured in <code>src/services/crypto-data-service.ts</code>).</CardDescription>
+          <CardDescription>Get an AI-generated trading strategy. The AI's market data tool fetches live Bitcoin (BTC) price from CoinDesk BPI. Other cryptos currently use simulated data via <code>src/services/crypto-data-service.ts</code>.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -145,9 +143,9 @@ export default function TradingStrategyForm() {
                 name="cryptocurrency"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Cryptocurrency Symbol (e.g., BINANCE:BTCUSDT or ETH)</FormLabel>
+                    <FormLabel>Cryptocurrency Symbol (e.g., BTC or BINANCE:ETHUSDT)</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., ETH or COINBASE:SOLUSD" {...field} className="bg-background" />
+                      <Input placeholder="e.g., BTC or COINBASE:SOLUSD" {...field} className="bg-background" />
                     </FormControl>
                     <FormDescription>The AI will attempt to fetch current market data using its tool.</FormDescription>
                     <FormMessage />
@@ -197,7 +195,7 @@ export default function TradingStrategyForm() {
          <Alert variant="default" className="border-accent">
             <InfoIcon className="h-4 w-4 !text-accent" />
             <AlertTitle>Ready for Strategy</AlertTitle>
-            <AlertDescription>Enter a cryptocurrency and your risk tolerance to get an AI-suggested trading strategy. Market data for AI analysis is attempted to be fetched live using the CoinDesk/Messari API via <code>src/services/crypto-data-service.ts</code>. If the API fails or a symbol is unsupported, basic mock data may be used as a fallback.</AlertDescription>
+            <AlertDescription>Enter a cryptocurrency and risk tolerance. For Bitcoin (BTC), price data is fetched live from CoinDesk BPI. For other cryptocurrencies, the AI uses simulated market data (from <code>src/services/crypto-data-service.ts</code>). For fully live data across all assets, integrate a comprehensive market data API into that service file.</AlertDescription>
         </Alert>
       )}
 
@@ -205,14 +203,13 @@ export default function TradingStrategyForm() {
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="font-headline">Suggested Trading Strategy for {formSubmittedSymbol}</CardTitle>
-             <CardDescription>
-                AI analysis based on market data.
-             </CardDescription>
              <Alert variant="default" className="mt-2 border-primary/50">
-                <DatabaseZap className="h-4 w-4 !text-primary" />
-                <AlertTitle className="text-primary">Live Data Notice</AlertTitle>
+                <Bitcoin className="h-4 w-4 !text-primary" />
+                <AlertTitle className="text-primary">Data Source Notice</AlertTitle>
                 <AlertDescription>
-                    The "Fetched Current Price" (if available) is attempted to be fetched live by the AI's tool using the CoinDesk/Messari API (configured in <code>src/services/crypto-data-service.ts</code>). All other figures (entry, exit, etc.) are illustrative AI suggestions based on this data. If the API call fails or the symbol is not supported by the API, basic mock data may be used or the price may show as 'N/A'.
+                    The "Fetched Current Price" for Bitcoin (BTC) is from CoinDesk BPI. For other cryptos, it's from a <strong>simulated data service</strong>. All other figures (entry, exit, etc.) are illustrative AI suggestions based on this data.
+                    Volume and 24h change are not provided by CoinDesk BPI for BTC.
+                    For live data for all assets, <code>src/services/crypto-data-service.ts</code> needs integration with a comprehensive market data API.
                 </AlertDescription>
             </Alert>
           </CardHeader>
