@@ -10,11 +10,12 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast"; // Import useToast
+import { useToast } from "@/hooks/use-toast";
 import { suggestTradingStrategy, type SuggestTradingStrategyInput, type SuggestTradingStrategyOutput } from "@/ai/flows/ai-trading-strategy-suggestion";
 import { Loader2, Lightbulb, LineChart } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
+import TradingPredictionCard from "@/components/features/TradingPredictionCard";
 
 const tradingStrategyFormSchema = z.object({
   cryptocurrency: z.string().min(1, "Cryptocurrency symbol is required (e.g., BTC, ETH).").transform(val => val.toUpperCase()),
@@ -33,7 +34,7 @@ export default function TradingStrategyForm() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [strategy, setStrategy] = React.useState<SuggestTradingStrategyOutput | null>(null);
   const [currentSymbolForWidget, setCurrentSymbolForWidget] = React.useState<string | null>(null);
-  const { toast } = useToast(); // Call useToast hook
+  const { toast } = useToast();
 
   const form = useForm<TradingStrategyFormValues>({
     resolver: zodResolver(tradingStrategyFormSchema),
@@ -50,16 +51,28 @@ export default function TradingStrategyForm() {
     try {
       const output = await suggestTradingStrategy(data);
       setStrategy(output);
-      setCurrentSymbolForWidget(data.cryptocurrency); // For the widget
+      setCurrentSymbolForWidget(data.cryptocurrency); 
       toast({
         title: "Strategy Suggested",
         description: `AI has generated a trading strategy for ${data.cryptocurrency}.`,
       });
     } catch (error) {
       console.error("Trading Strategy error:", error);
+      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred. Please try again.";
+      setStrategy({ // Set a default error strategy to display info
+        tradePossible: false,
+        suggestedPosition: "None",
+        strategyExplanation: `Error generating strategy: ${errorMessage}`,
+        currentPrice: null,
+        entryPoint: null,
+        exitPoint: null,
+        stopLossLevel: null,
+        profitTarget: null,
+        disclaimer: "Failed to generate strategy. Please check your input or try again later."
+      });
       toast({
         title: "Strategy Error",
-        description: (error as Error).message || "An unexpected error occurred. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -71,14 +84,15 @@ export default function TradingStrategyForm() {
     if (currentSymbolForWidget && window.TradingView) {
       const widgetContainerId = `tradingview-symbol-overview-${currentSymbolForWidget.toLowerCase()}`;
       const container = document.getElementById(widgetContainerId);
-      if (container && !container.querySelector('iframe')) { // Check if widget not already loaded
+      if (container) { 
+        container.innerHTML = ''; // Clear previous widget before loading new one
         new window.TradingView.MediumWidget({
-          symbols: [[`${currentSymbolForWidget.toUpperCase()}USD|1D`]], // Attempt common pairing
+          symbols: [[`${currentSymbolForWidget.toUpperCase()}USD|1D`]], 
           chartOnly: false,
           width: "100%",
           height: 300,
           locale: "en",
-          colorTheme: "dark", // Match app theme
+          colorTheme: "dark", 
           autosize: true,
           showVolume: true,
           hideDateRanges: false,
@@ -95,7 +109,7 @@ export default function TradingStrategyForm() {
           maLineColor: "#2962FF",
           maLineWidth: 1,
           maLength: 9,
-          backgroundColor: "rgba(0, 0, 0, 0)", // Transparent to blend with card
+          backgroundColor: "rgba(0, 0, 0, 0)", 
           lineWidth: 2,
           lineType: 0,
           dateRanges: ["1d", "1w", "1m", "3m", "1y", "all"],
@@ -103,9 +117,9 @@ export default function TradingStrategyForm() {
         });
       }
     }
-  }, [currentSymbolForWidget, strategy]); // Re-run if symbol or strategy changes
+  }, [currentSymbolForWidget]); 
 
-  const formatPrice = (price?: number) => {
+  const formatPrice = (price?: number | null) => {
     if (price === undefined || price === null) return 'N/A';
     return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: price < 1 ? 8 : 4 });
   };
@@ -120,7 +134,7 @@ export default function TradingStrategyForm() {
           </CardTitle>
           <CardDescription>
             Get AI-powered trading strategy suggestions. 
-            The AI attempts to use live market data via Messari API for current price.
+            The AI attempts to use live market data via the Messari API (powered by CoinDesk).
           </CardDescription>
         </CardHeader>
         <Form {...form}>
@@ -179,65 +193,86 @@ export default function TradingStrategyForm() {
         </div>
       )}
 
-      {strategy && (
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle className="font-headline text-xl flex items-center gap-2">
-                <LineChart className="h-5 w-5 text-accent" />
-                AI Strategy for {form.getValues("cryptocurrency").toUpperCase()}
-            </CardTitle>
-            <Alert variant="default" className="mt-2 bg-secondary/50">
-              <AlertTitle className="font-semibold">Live Data Notice & Disclaimer</AlertTitle>
-              <AlertDescription>
-                The "Fetched Current Price" is attempted to be sourced live via the Messari API (powered by CoinDesk). 
-                If live data is unavailable or an API error occurs, fallback mock data may be used.
-                All other figures (entry, exit, stop-loss, targets) and the strategy explanation are AI-generated illustrative examples based on this price and general chart analysis principles. 
-                This is NOT financial advice. Always do your own research and consult a financial advisor.
-              </AlertDescription>
-            </Alert>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {currentSymbolForWidget && (
-                <div id={`tradingview-symbol-overview-${currentSymbolForWidget.toLowerCase()}`} className="w-full h-[300px] rounded-md overflow-hidden shadow-inner bg-card"/>
-            )}
-            <div>
-              <h3 className="font-semibold text-lg mb-1">Strategy Explanation:</h3>
-              <p className="text-muted-foreground text-sm">{strategy.strategyExplanation}</p>
-            </div>
-            
-            <Separator />
+      {strategy && !isLoading && (
+        <>
+          <TradingPredictionCard
+            prediction={{
+              trade: strategy.tradePossible,
+              position: strategy.suggestedPosition || "None",
+              entryPrice: strategy.entryPoint,
+              exitPrice: strategy.exitPoint,
+              stopLoss: strategy.stopLossLevel,
+              takeProfit: strategy.profitTarget,
+            }}
+          />
+          <Card className="shadow-lg mt-6">
+            <CardHeader>
+              <CardTitle className="font-headline text-xl flex items-center gap-2">
+                  <LineChart className="h-5 w-5 text-accent" />
+                  AI Strategy for {form.getValues("cryptocurrency").toUpperCase()}
+              </CardTitle>
+              <Alert variant="default" className="mt-2 bg-secondary/50">
+                <AlertTitle className="font-semibold">Live Data Notice & Disclaimer</AlertTitle>
+                <AlertDescription>
+                  The "Fetched Current Price" is attempted to be sourced live via the Messari API. 
+                  If live data is unavailable or an API error occurs, it may show N/A.
+                  All other figures (entry, exit, stop-loss, targets) and the strategy explanation are AI-generated illustrative examples based on this price and general chart analysis principles. 
+                  This is NOT financial advice. Always do your own research and consult a financial advisor.
+                </AlertDescription>
+              </Alert>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {currentSymbolForWidget && (
+                  <div id={`tradingview-symbol-overview-${currentSymbolForWidget.toLowerCase()}`} className="w-full h-[300px] rounded-md overflow-hidden shadow-inner bg-card"/>
+              )}
+              <div>
+                <h3 className="font-semibold text-lg mb-1">Strategy Explanation:</h3>
+                <p className="text-muted-foreground text-sm">{strategy.strategyExplanation}</p>
+              </div>
+              
+              <Separator />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-              <div>
-                <h4 className="font-medium text-primary">Fetched Current Price:</h4>
-                <p className="text-2xl font-bold">{strategy.currentPrice !== undefined && strategy.currentPrice !== null ? `$${formatPrice(strategy.currentPrice)}` : 'N/A (Tool did not provide)'}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                <div>
+                  <h4 className="font-medium text-primary">Fetched Current Price:</h4>
+                  <p className="text-2xl font-bold">{strategy.currentPrice !== undefined && strategy.currentPrice !== null ? `$${formatPrice(strategy.currentPrice)}` : 'N/A'}</p>
+                </div>
+                {strategy.tradePossible && strategy.suggestedPosition !== "None" && (
+                  <>
+                    <div>
+                      <h4 className="font-medium">Suggested Entry Point:</h4>
+                      <p className="text-lg">${formatPrice(strategy.entryPoint)}</p>
+                    </div>
+                    <div>
+                      <h4 className="font-medium">Suggested Exit Point:</h4>
+                      <p className="text-lg">${formatPrice(strategy.exitPoint)}</p>
+                    </div>
+                    <div>
+                      <h4 className="font-medium">Suggested Stop-Loss:</h4>
+                      <p className="text-lg">${formatPrice(strategy.stopLossLevel)}</p>
+                    </div>
+                    <div>
+                      <h4 className="font-medium">Suggested Profit Target:</h4>
+                      <p className="text-lg">${formatPrice(strategy.profitTarget)}</p>
+                    </div>
+                  </>
+                )}
+                {!strategy.tradePossible && (
+                    <div className="md:col-span-2">
+                        <p className="text-muted-foreground">No specific trade parameters suggested as no trade is currently viable according to the AI.</p>
+                    </div>
+                )}
               </div>
+              
+              <Separator />
+              
               <div>
-                <h4 className="font-medium">Suggested Entry Point:</h4>
-                <p className="text-lg">${formatPrice(strategy.entryPoint)}</p>
+                <h3 className="font-semibold text-lg mb-1">Disclaimer:</h3>
+                <p className="text-muted-foreground text-xs italic">{strategy.disclaimer}</p>
               </div>
-              <div>
-                <h4 className="font-medium">Suggested Exit Point:</h4>
-                <p className="text-lg">${formatPrice(strategy.exitPoint)}</p>
-              </div>
-              <div>
-                <h4 className="font-medium">Suggested Stop-Loss:</h4>
-                <p className="text-lg">${formatPrice(strategy.stopLossLevel)}</p>
-              </div>
-              <div>
-                <h4 className="font-medium">Suggested Profit Target:</h4>
-                <p className="text-lg">${formatPrice(strategy.profitTarget)}</p>
-              </div>
-            </div>
-            
-            <Separator />
-            
-            <div>
-              <h3 className="font-semibold text-lg mb-1">Disclaimer:</h3>
-              <p className="text-muted-foreground text-xs italic">{strategy.disclaimer}</p>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </>
       )}
 
       {!isLoading && !strategy && (

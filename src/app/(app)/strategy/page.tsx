@@ -1,7 +1,5 @@
 
 import TradingStrategyForm from "@/components/forms/TradingStrategyForm";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import TradingPredictionCard from "@/components/features/TradingPredictionCard";
 import { Bot } from "lucide-react";
 
 export default function StrategyPage() {
@@ -15,19 +13,7 @@ export default function StrategyPage() {
           </p>
         </div>
       </div>
-      {/* TODO: Add logic here to fetch the trading prediction data */}
-      {/* Placeholder for prediction data */}
-      {/* Replace with actual data fetched from the AI flow */}
-      <TradingPredictionCard
-        prediction={{
-          trade: true,
-          position: "Long",
-          entryPrice: 28000,
-          exitPrice: 30000,
-          stopLoss: 27500,
-          takeProfit: 31000,
-        }}
-      />
+      {/* TradingPredictionCard and strategy details will be rendered by TradingStrategyForm */}
       <TradingStrategyForm />
     </div>
   );
