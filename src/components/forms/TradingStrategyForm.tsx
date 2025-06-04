@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast"; // Import useToast
 import { suggestTradingStrategy, type SuggestTradingStrategyInput, type SuggestTradingStrategyOutput } from "@/ai/flows/ai-trading-strategy-suggestion";
 import { Loader2, Lightbulb, LineChart } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -33,7 +33,7 @@ export default function TradingStrategyForm() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [strategy, setStrategy] = React.useState<SuggestTradingStrategyOutput | null>(null);
   const [currentSymbolForWidget, setCurrentSymbolForWidget] = React.useState<string | null>(null);
-  const toast = useToast();
+  const { toast } = useToast(); // Call useToast hook
 
   const form = useForm<TradingStrategyFormValues>({
     resolver: zodResolver(tradingStrategyFormSchema),
@@ -187,11 +187,12 @@ export default function TradingStrategyForm() {
                 AI Strategy for {form.getValues("cryptocurrency").toUpperCase()}
             </CardTitle>
             <Alert variant="default" className="mt-2 bg-secondary/50">
-              <AlertTitle className="font-semibold">Live Data Notice</AlertTitle>
+              <AlertTitle className="font-semibold">Live Data Notice & Disclaimer</AlertTitle>
               <AlertDescription>
-                The "Fetched Current Price" is attempted to be sourced live via the Messari API. 
-                If live data is unavailable or an API error occurs, fallback data may be used.
-                All other figures (entry, exit, stop-loss, targets) are AI-generated illustrative examples based on this price and are NOT financial advice.
+                The "Fetched Current Price" is attempted to be sourced live via the Messari API (powered by CoinDesk). 
+                If live data is unavailable or an API error occurs, fallback mock data may be used.
+                All other figures (entry, exit, stop-loss, targets) and the strategy explanation are AI-generated illustrative examples based on this price and general chart analysis principles. 
+                This is NOT financial advice. Always do your own research and consult a financial advisor.
               </AlertDescription>
             </Alert>
           </CardHeader>
