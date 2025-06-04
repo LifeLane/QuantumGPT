@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -28,7 +29,7 @@ export default function TradingStrategyForm() {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      cryptocurrency: "BTC",
+      cryptocurrency: "",
       riskTolerance: "medium",
     },
   });
@@ -65,9 +66,9 @@ export default function TradingStrategyForm() {
                   <FormItem>
                     <FormLabel>Cryptocurrency Symbol</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., ETH, SOL" {...field} className="bg-background" />
+                      <Input placeholder="e.g., ETH, SOL, BTC" {...field} className="bg-background" />
                     </FormControl>
-                    <FormDescription>Enter the ticker symbol (e.g., BTC). The AI will attempt to fetch its current price.</FormDescription>
+                    <FormDescription>Enter the ticker symbol. The AI will attempt to fetch its current price.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -94,7 +95,7 @@ export default function TradingStrategyForm() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
+              <Button type="submit" disabled={isLoading || !form.formState.isValid} className="w-full sm:w-auto">
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 Get Strategy
               </Button>
@@ -112,8 +113,8 @@ export default function TradingStrategyForm() {
       )}
 
       {!isLoading && suggestion === null && !error && (
-         <Alert variant="default" className="border-blue-500 text-blue-700 dark:border-blue-400 dark:text-blue-300">
-            <InfoIcon className="h-4 w-4 !text-blue-500 dark:!text-blue-400" />
+         <Alert variant="default" className="border-accent">
+            <InfoIcon className="h-4 w-4 !text-accent" />
             <AlertTitle>Ready for Strategy</AlertTitle>
             <AlertDescription>Enter a cryptocurrency and your risk tolerance to get an AI-suggested trading strategy. Note: Real-time data fetching is simulated.</AlertDescription>
         </Alert>
@@ -126,6 +127,9 @@ export default function TradingStrategyForm() {
              {suggestion.currentPrice !== undefined && suggestion.currentPrice !== null && (
               <CardDescription>Based on current price of ${suggestion.currentPrice.toLocaleString()} (simulated real-time data).</CardDescription>
             )}
+             {(suggestion.currentPrice === undefined || suggestion.currentPrice === null) && (
+                 <CardDescription>Current price data was not available for this cryptocurrency. Strategy is based on general analysis.</CardDescription>
+             )}
           </CardHeader>
           <CardContent className="space-y-4">
             <div>

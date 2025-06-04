@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -27,7 +28,7 @@ export default function CryptoScreenerForm() {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      criteria: "Cryptocurrencies with strong upward momentum, positive news sentiment, and market cap over $1B. Use real-time data for price and volume.",
+      criteria: "Identify cryptocurrencies with potential based on market trends and volume. Fetch current prices.",
     },
   });
 
@@ -74,7 +75,7 @@ export default function CryptoScreenerForm() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
+              <Button type="submit" disabled={isLoading || !form.formState.isValid} className="w-full sm:w-auto">
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 Screen Cryptos
               </Button>
@@ -92,8 +93,8 @@ export default function CryptoScreenerForm() {
       )}
       
       {!isLoading && results === null && !error && (
-         <Alert variant="default" className="border-blue-500 text-blue-700 dark:border-blue-400 dark:text-blue-300">
-            <InfoIcon className="h-4 w-4 !text-blue-500 dark:!text-blue-400" />
+         <Alert variant="default" className="border-accent">
+            <InfoIcon className="h-4 w-4 !text-accent" />
             <AlertTitle>Ready to Screen</AlertTitle>
             <AlertDescription>Enter your criteria above and click "Screen Cryptos" to see AI-powered results. Note: Real-time data fetching is simulated.</AlertDescription>
         </Alert>
@@ -128,8 +129,8 @@ export default function CryptoScreenerForm() {
                     {results.map((crypto) => (
                       <TableRow key={crypto.symbol}>
                         <TableCell className="font-medium">{crypto.symbol}</TableCell>
-                        <TableCell>${crypto.price ? crypto.price.toLocaleString() : 'N/A'}</TableCell>
-                        <TableCell>${crypto.volume ? crypto.volume.toLocaleString() : 'N/A'}</TableCell>
+                        <TableCell>${(crypto.price !== undefined && crypto.price !== null) ? crypto.price.toLocaleString() : 'N/A'}</TableCell>
+                        <TableCell>${(crypto.volume !== undefined && crypto.volume !== null) ? crypto.volume.toLocaleString() : 'N/A'}</TableCell>
                         <TableCell className="max-w-xs text-sm">{crypto.summary}</TableCell>
                         <TableCell className="max-w-xs text-sm">{crypto.recentNews}</TableCell>
                       </TableRow>

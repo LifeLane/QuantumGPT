@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -18,7 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { LogoIcon } from "@/components/icons/LogoIcon";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Home, Search, BotMessageSquare, ListChecks, Bell, LineChartIcon, Settings, LogOut } from "lucide-react"; // Changed LineChart to LineChartIcon
+import { Home, Search, BotMessageSquare, ListChecks, Bell, LineChartIcon, Settings, LogOut } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -47,7 +48,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <SidebarHeader className="p-4">
           <Link href="/dashboard" className="flex items-center gap-2">
             <LogoIcon className="w-8 h-8 text-primary" />
-            <h1 className="text-xl font-headline font-semibold text-primary">CryptoSage</h1>
+            <div className="flex flex-col">
+              <h1 className="text-xl font-headline font-semibold text-primary">Quantum GPT</h1>
+              <span className="text-xs text-muted-foreground -mt-1">Powered by BlockSmithAI</span>
+            </div>
           </Link>
         </SidebarHeader>
         <SidebarContent className="p-0">
@@ -75,10 +79,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center justify-start gap-2 w-full px-2">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src="https://placehold.co/40x40.png" alt="User Avatar" data-ai-hint="user avatar" />
-                  <AvatarFallback>CS</AvatarFallback>
+                  <AvatarImage src="https://placehold.co/40x40.png" alt="Quantum User" data-ai-hint="user avatar" />
+                  <AvatarFallback>QG</AvatarFallback>
                 </Avatar>
-                <span className="font-medium group-data-[collapsible=icon]:hidden">Crypto User</span>
+                <span className="font-medium group-data-[collapsible=icon]:hidden">Quantum User</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent side="top" align="start" className="w-56">
@@ -99,7 +103,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <SidebarInset className="flex flex-col">
         <header className="sticky top-0 z-10 flex h-14 items-center justify-between gap-4 border-b bg-background/80 backdrop-blur-sm px-6 md:justify-end">
           <SidebarTrigger className="md:hidden" />
-          {/* Potentially add breadcrumbs or page title here */}
         </header>
         <main className="flex-1 overflow-y-auto p-6">
           {children}

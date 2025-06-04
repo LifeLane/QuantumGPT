@@ -1,20 +1,19 @@
+
 "use client";
 
 import * as React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, Search, BotMessageSquare, ListChecks } from 'lucide-react'; // Removed LineChartIcon
+import { ArrowRight, Search, BotMessageSquare, ListChecks } from 'lucide-react';
 
-// TradingView Market Overview Widget
 const MarketOverviewWidget: React.FC = () => {
   const containerId = "tradingview-market-overview";
   React.useEffect(() => {
     if (document.getElementById(containerId) && typeof TradingView !== 'undefined') {
-      // Ensure the container is empty before appending a new widget
       const container = document.getElementById(containerId);
       if (container) {
-        container.innerHTML = ''; // Clear previous widget if any
+        container.innerHTML = '';
       }
       new TradingView.MarketOverview({
         "container_id": containerId,
@@ -28,8 +27,8 @@ const MarketOverviewWidget: React.FC = () => {
         "showFloatingTooltip": false,
         "width": "100%",
         "height": "450",
-        "plotLineColorGrowing": "rgba(41, 98, 255, 1)",
-        "plotLineColorFalling": "rgba(255, 71, 71, 1)",
+        "plotLineColorGrowing": "rgba(41, 98, 255, 1)", // Consider updating with theme colors
+        "plotLineColorFalling": "rgba(255, 71, 71, 1)", // Consider updating with theme colors
         "gridLineColor": "rgba(240, 243, 250, 0)",
         "scaleFontColor": "rgba(120, 123, 134, 1)",
         "belowLineFillColorGrowing": "rgba(41, 98, 255, 0.12)",
@@ -72,7 +71,7 @@ const MarketOverviewWidget: React.FC = () => {
 export default function DashboardPage() {
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-3xl font-headline font-semibold">Welcome to CryptoSage</h1>
+      <h1 className="text-3xl font-headline font-semibold">Welcome to Quantum GPT</h1>
       <p className="text-muted-foreground">
         Your AI-powered companion for navigating the crypto markets.
       </p>
@@ -127,7 +126,6 @@ export default function DashboardPage() {
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="font-headline flex items-center gap-2">
-            {/* Using a generic icon as LineChartIcon might imply a custom chart */}
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6 text-accent"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
             Market Overview
           </CardTitle>

@@ -1,11 +1,12 @@
+
 import type { Metadata } from 'next';
 import Script from 'next/script';
 import { Toaster } from "@/components/ui/toaster";
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'CryptoSage',
-  description: 'Find and analyze cryptocurrencies, and get trading ideas.',
+  title: 'Quantum GPT | Powered by BlockSmithAI',
+  description: 'Find and analyze cryptocurrencies, and get trading ideas with Quantum GPT.',
 };
 
 export default function RootLayout({

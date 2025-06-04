@@ -1,5 +1,11 @@
-# Firebase Studio
 
-This is a NextJS starter in Firebase Studio.
+# Quantum GPT - Powered by BlockSmithAI
 
-To get started, take a look at src/app/page.tsx.
+This is a NextJS starter app in Firebase Studio, transformed into Quantum GPT, an AI-powered cryptocurrency analysis and strategy tool.
+
+To get started, explore the features:
+- Dashboard: `/dashboard`
+- Crypto Screener: `/screener`
+- AI Trading Strategy: `/strategy`
+
+The application uses Next.js, React, ShadCN UI, Tailwind CSS, and Genkit for AI functionalities.
