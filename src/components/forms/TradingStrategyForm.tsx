@@ -52,8 +52,6 @@ export default function TradingStrategyForm() {
 
   const handleSentimentChange = (value: string) => {
     const newSentiment = value as UserUISentiment;
-    // If the clicked tab is already active, deselect it (set to undefined).
-    // Otherwise, select the new tab.
     if (selectedUISentiment === newSentiment) {
       setSelectedUISentiment(undefined);
     } else {
@@ -64,14 +62,14 @@ export default function TradingStrategyForm() {
   const onSubmit: SubmitHandler<TradingStrategyFormValues> = async (data) => {
     setIsLoading(true);
     setStrategy(null);
-    setCurrentSymbolForWidget(null); // Clear previous symbol for charts
+    setCurrentSymbolForWidget(null); 
 
     let aiSentiment: AISentiment;
     if (selectedUISentiment === 'bullish') {
       aiSentiment = 'bullish';
     } else if (selectedUISentiment === 'bearish') {
       aiSentiment = 'bearish';
-    } else { // Handles 'neutral' or undefined
+    } else { 
       aiSentiment = undefined;
     }
 
@@ -187,14 +185,14 @@ export default function TradingStrategyForm() {
   const getSentimentDisplayText = () => {
     if (selectedUISentiment === 'bullish') return "Bullish";
     if (selectedUISentiment === 'bearish') return "Bearish";
-    return "Not Specified"; // For 'neutral' or undefined
+    return "Not Specified";
   };
 
   const getRiskToleranceDisplayText = () => {
     if (selectedRiskTolerance === 'low') return "Low Risk";
     if (selectedRiskTolerance === 'medium') return "Medium Risk";
     if (selectedRiskTolerance === 'high') return "High Risk";
-    return "Medium Risk"; // Default, though should always be one of the three
+    return "Medium Risk";
   };
 
 
@@ -233,7 +231,7 @@ export default function TradingStrategyForm() {
                 <FormItem className="flex flex-col items-center space-y-2">
                   <FormLabel className="text-foreground font-body">Your Market View (Optional)</FormLabel>
                   <Tabs
-                    value={selectedUISentiment || "neutral"} // Default to "neutral" if undefined for Tabs component
+                    value={selectedUISentiment || "neutral"} 
                     onValueChange={handleSentimentChange}
                     className="w-auto max-w-md"
                   >
@@ -289,7 +287,6 @@ export default function TradingStrategyForm() {
         </div>
       )}
 
-      {/* Placeholder structure when not loading and no strategy yet */}
       {!isLoading && !strategy && (
         <>
         <Card className="bg-card/70 backdrop-blur-sm border-slate-700 shadow-xl mt-6">
@@ -319,8 +316,8 @@ export default function TradingStrategyForm() {
                  <Skeleton id={`tradingview-chart2-${(currentCryptoInput || "default").toLowerCase().replace(/[^a-z0-9]/g, '')}`} className="w-full h-full flex items-center justify-center text-muted-foreground">Weekly View: Awaiting Symbol</Skeleton>
               </div>
             </div>
-            <div className="text-sm text-muted-foreground text-center italic">
-              Note: Charts above are simplified area charts with volume. For detailed candlestick charts, please use the "Charting Tools" page.
+             <div className="text-sm text-muted-foreground text-center italic">
+                Note: Charts above are simplified area charts with volume, showing daily and weekly perspectives. For detailed candlestick charts, please use the "Charting Tools" page.
             </div>
             <div className="text-center">
               <h3 className="font-semibold text-lg mb-1 text-foreground">Strategy Explanation:</h3>
@@ -363,7 +360,6 @@ export default function TradingStrategyForm() {
         </>
       )}
 
-      {/* Actual strategy results */}
       {strategy && !isLoading && (
         <>
           <Card className="bg-card/70 backdrop-blur-sm border-slate-700 shadow-xl mt-6">
@@ -457,4 +453,3 @@ export default function TradingStrategyForm() {
     </div>
   );
 }
-
