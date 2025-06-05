@@ -10,7 +10,7 @@
  * - SuggestTradingStrategyOutput - The return type for the suggestTradingStrategy function.
  */
 
-import {ai} from '@/ai/genkit';
+import {ai, geminiPro} from '@/ai/genkit'; // Using geminiPro as default for this flow
 import {z} from 'genkit';
 import { getCryptoMarketDataTool, type MarketData, MarketDataSchema } from '@/ai/tools/market-data-tool';
 
@@ -23,7 +23,7 @@ export type SuggestTradingStrategyInput = z.infer<typeof SuggestTradingStrategyI
 const SuggestTradingStrategyOutputSchema = z.object({
   tradePossible: z.boolean().describe('Whether a trade is currently viable based on the analysis. Set to false if no clear opportunity or if data is missing.'),
   suggestedPosition: z.enum(['Long', 'Short', 'None']).describe('The suggested trading position (Long, Short). Set to "None" if tradePossible is false.'),
-  strategyExplanation: z.string().describe('A detailed analysis explaining the reasoning behind the trade recommendation and the suggested price points, considering the current market price, user risk tolerance, and common technical analysis principles (like trends, support/resistance, indicators like MA/RSI/MACD, and chart patterns).'),
+  strategyExplanation: z.string().describe('A detailed analysis explaining the reasoning behind the trade recommendation and the suggested price points, considering the current market price, user risk tolerance, and common technical analysis principles (like trends, support/resistance, indicators like MA/RSI/MACD, and chart patterns). This explanation should be based on *simulating* chart analysis using ONLY the provided market data points (price, volume, change).'),
   currentPrice: z.number().nullable().describe('The current market price of the cryptocurrency fetched by the tool, or null if unavailable.'),
   entryPoint: z.number().nullable().describe('The recommended entry price for the trade, or null if no trade is recommended or tradePossible is false.'),
   exitPoint: z.number().nullable().describe('The recommended exit price for the trade, or null if no trade is recommended or tradePossible is false.'),
@@ -41,51 +41,49 @@ export async function suggestTradingStrategy(input: SuggestTradingStrategyInput)
 
 const prompt = ai.definePrompt({
   name: 'suggestTradingStrategyPrompt',
+  model: geminiPro, // Specify the model for this prompt
   input: {schema: z.object({
     cryptocurrency: SuggestTradingStrategyInputSchema.shape.cryptocurrency,
     riskTolerance: SuggestTradingStrategyInputSchema.shape.riskTolerance,
-    marketData: MarketDataSchema.nullable().describe("Current market data for the cryptocurrency. This will be fetched by a tool prior to calling you."),
+    marketData: MarketDataSchema.nullable().describe("Current market data for the cryptocurrency. This will be fetched by a tool prior to calling you. If this is null, or if price is null, a trading strategy cannot be reliably formed."),
   })},
   output: {schema: SuggestTradingStrategyOutputSchema},
   prompt: `You are an AI-powered trading strategy advisor with expertise in technical chart analysis.
-Your goal is to provide a clear, actionable trading strategy for the given cryptocurrency based on the provided market data and the user's risk tolerance.
+Your goal is to provide a clear, actionable trading strategy for the given cryptocurrency based *solely* on the provided market data points (current price, 24h volume, 24h price change) and the user's risk tolerance. You DO NOT have access to a live chart image; you must *simulate* chart analysis using only these data points.
 
 Cryptocurrency: {{{cryptocurrency}}}
 User Risk Tolerance: {{{riskTolerance}}}
 
 Current Market Data (from tool):
-- Price: {{#if marketData.price}}{{marketData.price}}{{else}}not available{{/if}}
+- Current Price: {{#if marketData.price}}{{marketData.price}}{{else}}not available{{/if}}
 - 24h Volume: {{#if marketData.volume24h}}{{marketData.volume24h}}{{else}}not available{{/if}}
-- 24h Price Change: {{#if marketData.priceChange24hPercent}}{{marketData.priceChange24hPercent}}%{{else}}not available{{/if}}
+- 24h Price Change (%): {{#if marketData.priceChange24hPercent}}{{marketData.priceChange24hPercent}}%{{else}}not available{{/if}}
 
-Begin by *simulating* an analysis of this market data as if you were interpreting a TradingView chart.
-Your analysis should be based *solely* on the provided market data (price, volume, 24h change).
-Based on this data, infer potential:
-- Current trend (uptrend, downtrend, sideways).
-- Key support and resistance levels relative to the current price.
-- Plausible chart patterns (e.g., triangles, head and shoulders, flags) that might be forming or recently completed given the data context.
-- Potential signals from common technical indicators (e.g., Moving Averages crossovers, RSI overbought/oversold levels, MACD signals) that could be implied by the current price action and volume.
+Your Task:
+1.  **Analyze Market Data**: Based *only* on the provided 'Current Price', '24h Volume', and '24h Price Change (%)':
+    *   Infer the potential current trend (e.g., "Given the positive 24h price change and high volume, the short-term trend appears to be upward.").
+    *   Infer potential key support and resistance levels *relative to the current price* (e.g., "If current price is X, a recent low might act as support around Y, and a recent high as resistance around Z, based on typical price action around these data points.").
+    *   Hypothesize plausible chart patterns (e.g., "A significant price increase on high volume might suggest a breakout, or if the price has consolidated, it could be forming a flag/pennant.").
+    *   Consider how common technical indicators (like Moving Averages, RSI, MACD) *might behave* given this limited data (e.g., "A sharp price increase might push RSI into overbought territory.").
+    *   Your analysis for these points MUST be based on simulating what these indicators/patterns would look like given ONLY the numeric data provided. Do NOT invent data or assume you see a full chart.
 
-Based on this simulated "chart-like" analysis of the provided data and considering the user's risk tolerance ({{{riskTolerance}}}), formulate a trading strategy.
+2.  **Formulate Strategy**: Based on your simulated analysis of the provided data and considering the user's risk tolerance ('{{{riskTolerance}}}'), formulate a trading strategy.
 
-Your strategy response MUST include:
-- tradePossible: A boolean indicating if a trade is viable based on your simulated analysis of the provided data.
-- suggestedPosition: "Long", "Short", or "None". If tradePossible is false, this must be "None".
-- strategyExplanation: A detailed explanation of your analysis. Why do you suggest this strategy? What chart patterns or indicator signals (that you've inferred from the data) support it? How does risk tolerance influence it?
-- currentPrice: The price fetched by the tool (repeat it here from the input marketData.price).
-- entryPoint: A suggested price to enter a trade. If tradePossible is false, this must be null.
-- exitPoint: A suggested price to exit a trade if it goes well (e.g., a take profit level). If tradePossible is false, this must be null.
-- stopLossLevel: A suggested price to cut losses if the trade goes against you. If tradePossible is false, this must be null.
-- profitTarget: An alternative or primary profit target. This might be the same as exitPoint or a more ambitious target. If tradePossible is false, this must be null.
-- disclaimer: The standard financial disclaimer.
+3.  **Output**: Your response MUST be in the JSON format defined by the output schema and include all fields.
 
-If marketData is null or marketData.price is null:
-- Your strategyExplanation should state that a strategy cannot be formed due to lack of market data.
-- Set tradePossible to false.
-- Set suggestedPosition to "None".
-- All price-related fields (currentPrice, entryPoint, exitPoint, stopLossLevel, profitTarget) MUST be null.
+Output Field Instructions:
+-   **tradePossible**: Boolean. Set to \`false\` if:
+    *   \`marketData\` is \`null\`.
+    *   \`marketData.price\` is \`null\`.
+    *   Your simulated analysis of the provided data indicates no clear or safe trading opportunity.
+    Otherwise, set to \`true\` if a viable trade is identified.
+-   **suggestedPosition**: "Long", "Short", or "None". If \`tradePossible\` is \`false\`, this MUST be "None".
+-   **strategyExplanation**: A detailed explanation of your simulated analysis. How did you infer trends, S/R levels, patterns, or indicator signals from the limited data? How does risk tolerance influence the strategy? If \`tradePossible\` is \`false\` due to missing data, state that clearly.
+-   **currentPrice**: The \`marketData.price\` fetched by the tool (repeat it here from the input). If \`marketData.price\` is null, this field must be null.
+-   **entryPoint, exitPoint, stopLossLevel, profitTarget**: Illustrative price points. If \`tradePossible\` is \`false\`, these MUST all be \`null\`.
+-   **disclaimer**: The standard financial disclaimer about risk and this not being financial advice.
 
-If, after your simulated analysis, you determine no clear trading opportunity exists even with available market data, set tradePossible to false, suggestedPosition to "None", and relevant price-related fields (entryPoint, exitPoint, stopLossLevel, profitTarget) to null. The currentPrice should still reflect the fetched price if available.
+Example for missing data: If \`marketData\` is \`null\`, your \`strategyExplanation\` should state: "A trading strategy cannot be formed due to missing market data for {{{cryptocurrency}}}." \`tradePossible\` must be \`false\`, \`suggestedPosition\` "None", and all price fields \`null\`.
 
 Present your response strictly in the JSON format defined by the output schema.
 `,
@@ -96,15 +94,17 @@ const suggestTradingStrategyFlow = ai.defineFlow(
     name: 'suggestTradingStrategyFlow',
     inputSchema: SuggestTradingStrategyInputSchema,
     outputSchema: SuggestTradingStrategyOutputSchema,
+    // Tools are not directly used by this prompt, but the flow calls the tool.
   },
   async (input: SuggestTradingStrategyInput): Promise<SuggestTradingStrategyOutput> => {
     let marketData: MarketData | null = null;
     try {
       console.log(`[AIStrategyFlow] Fetching market data for: ${input.cryptocurrency}`);
-      marketData = await getCryptoMarketDataTool({symbol: input.cryptocurrency});
+      marketData = await getCryptoMarketDataTool({symbol: input.cryptocurrency}); // Calling the tool as a function
       console.log(`[AIStrategyFlow] Market data for ${input.cryptocurrency}:`, marketData);
     } catch (toolError) {
       console.error(`[AIStrategyFlow] Error calling getCryptoMarketDataTool for ${input.cryptocurrency}:`, toolError);
+      // marketData remains null
     }
 
     console.log(`[AIStrategyFlow] Calling prompt with input:`, { ...input, marketData });
@@ -136,17 +136,25 @@ const suggestTradingStrategyFlow = ai.defineFlow(
         currentPrice: marketData?.price ?? null,
     };
 
-    // If marketData was null, ensure tradePossible is false and position is None.
-    if (!marketData || marketData.price === null) {
+    // If marketData was null or its price was null, ensure tradePossible is false and position is None, and price points are null.
+    if (!marketData || marketData.price === null || marketData.price === undefined) {
         finalOutput.tradePossible = false;
         finalOutput.suggestedPosition = "None";
         finalOutput.entryPoint = null;
         finalOutput.exitPoint = null;
         finalOutput.stopLossLevel = null;
         finalOutput.profitTarget = null;
-        // Optionally, you might want to overwrite strategyExplanation if data was missing,
-        // but the prompt already guides the LLM to do this.
-        // finalOutput.strategyExplanation = "Strategy cannot be determined due to missing market data.";
+        // The prompt instructs the LLM to update strategyExplanation for missing data,
+        // but we can add a fallback here if needed.
+        if (!finalOutput.strategyExplanation.includes("missing market data")) {
+             finalOutput.strategyExplanation = `Strategy cannot be determined due to missing or incomplete market data for ${input.cryptocurrency}. ${finalOutput.strategyExplanation}`;
+        }
+    } else if (!finalOutput.tradePossible) { // If trade is not possible but we had data, ensure position and points are nullified
+        finalOutput.suggestedPosition = "None";
+        finalOutput.entryPoint = null;
+        finalOutput.exitPoint = null;
+        finalOutput.stopLossLevel = null;
+        finalOutput.profitTarget = null;
     }
 
 
@@ -154,3 +162,4 @@ const suggestTradingStrategyFlow = ai.defineFlow(
   }
 );
 
+    
