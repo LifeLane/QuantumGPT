@@ -40,7 +40,10 @@ export async function fetchRealTimeData(originalSymbol: string): Promise<MarketD
   const apiKey = process.env.COINDESK_API_KEY; // Note: User needs to set this to their Messari API key
 
   if (!apiKey) {
-    console.warn(`CryptoDataService: COINDESK_API_KEY (for Messari) is not set. Falling back to mock data for ${originalSymbol}.`);
+    console.warn(`\n⚠️ ACTION REQUIRED: CryptoDataService ⚠️`);
+    console.warn(`   COINDESK_API_KEY (for Messari) is not set in your environment.`);
+    console.warn(`   Falling back to MOCK data for ${originalSymbol}.`);
+    console.warn(`   To use live data, set this environment variable with your Messari API key.\n`);
     return getMockData(originalSymbol);
   }
 
