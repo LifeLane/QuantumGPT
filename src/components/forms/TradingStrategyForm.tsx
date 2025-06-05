@@ -16,6 +16,7 @@ import { Loader2, Lightbulb, LineChart, AlertTriangle, TrendingUp, TrendingDown,
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import TradingPredictionCard from "@/components/features/TradingPredictionCard";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const tradingStrategyFormSchema = z.object({
   cryptocurrency: z.string().min(1, "Cryptocurrency symbol is required (e.g., BTC, ETH).").transform(val => val.toUpperCase()),
@@ -47,13 +48,14 @@ export default function TradingStrategyForm() {
       cryptocurrency: "",
     },
   });
+  const currentCryptoInput = form.watch("cryptocurrency");
 
   const handleSentimentChange = (value: string) => {
     const newSentiment = value as UserUISentiment;
     if (selectedUISentiment === newSentiment) {
-      setSelectedUISentiment(undefined); // Deselect if current tab is clicked again
+      setSelectedUISentiment(undefined); 
     } else {
-      setSelectedUISentiment(newSentiment); // Select new tab
+      setSelectedUISentiment(newSentiment); 
     }
   };
 
@@ -68,8 +70,6 @@ export default function TradingStrategyForm() {
     } else if (selectedUISentiment === 'bearish') {
       aiSentiment = 'bearish';
     } else { 
-      // This covers if selectedUISentiment is 'neutral' or undefined (no tab selected)
-      // In both cases, the AI should perform a general analysis for sentiment.
       aiSentiment = undefined;
     }
 
@@ -184,8 +184,7 @@ export default function TradingStrategyForm() {
   const getSentimentDisplayText = () => {
     if (selectedUISentiment === 'bullish') return "Bullish";
     if (selectedUISentiment === 'bearish') return "Bearish";
-    if (selectedUISentiment === 'neutral') return "Neutral / General";
-    return "Not Specified"; // For when selectedUISentiment is undefined
+    return "Not Specified"; // For 'neutral' or undefined
   };
 
   const getRiskToleranceDisplayText = () => {
@@ -231,7 +230,7 @@ export default function TradingStrategyForm() {
                 <FormItem className="flex flex-col items-center space-y-2">
                   <FormLabel className="text-foreground font-body">Your Market View (Optional)</FormLabel>
                   <Tabs 
-                    value={selectedUISentiment} 
+                    value={selectedUISentiment || ""} // Pass empty string if undefined for Tabs to handle no selection
                     onValueChange={handleSentimentChange} 
                     className="w-auto max-w-md"
                   >
@@ -303,7 +302,7 @@ export default function TradingStrategyForm() {
               <Alert variant="default" className="mt-2 bg-background/50 border-border text-sm text-left">
                 <AlertTitle className="font-semibold font-body text-foreground">Live Data Notice & Disclaimer</AlertTitle>
                 <AlertDescription className="text-muted-foreground font-body">
-                  QuantumGPT isn't just another trading tool — it’s a research-grade intelligence system crafted through months of dedicated blockchain modeling, market psychology analysis, and financial AI simulation.
+                QuantumGPT isn't just another trading tool — it’s a research-grade intelligence system crafted through months of dedicated blockchain modeling, market psychology analysis, and financial AI simulation.
                 </AlertDescription>
               </Alert>
             </CardHeader>
@@ -369,14 +368,71 @@ export default function TradingStrategyForm() {
         </>
       )}
 
+      {/* Structural Placeholder for Results Area */}
       {!isLoading && !strategy && (
-        <Card className="bg-card/70 backdrop-blur-sm border-slate-700 shadow-xl">
-            <CardContent className="pt-6 text-center">
-                <p className="text-muted-foreground font-body">
-                    Enter a cryptocurrency symbol, select your market view (optional), and define your risk tolerance to get an AI-powered trading strategy.
-                </p>
+        <>
+        <Card className="bg-card/70 backdrop-blur-sm border-slate-700 shadow-xl mt-6">
+          <CardHeader className="text-center">
+            <CardTitle className="font-headline text-xl flex items-center justify-center gap-2 text-foreground">
+                <LineChart className="h-5 w-5 text-accent" />
+                AI Strategy for {currentCryptoInput ? currentCryptoInput.toUpperCase() : "Your Crypto"}
+            </CardTitle>
+             <div className="text-sm text-muted-foreground font-body text-center">
+                Analysis based on:
+                Market View: <span className="font-semibold text-foreground">{getSentimentDisplayText()}</span> |
+                Risk Tolerance: <span className="font-semibold text-foreground">{getRiskToleranceDisplayText()}</span>
+              </div>
+            <Alert variant="default" className="mt-2 bg-background/50 border-border text-sm text-left">
+              <AlertTitle className="font-semibold font-body text-foreground">Live Data Notice & Disclaimer</AlertTitle>
+              <AlertDescription className="text-muted-foreground font-body">
+              QuantumGPT isn't just another trading tool — it’s a research-grade intelligence system crafted through months of dedicated blockchain modeling, market psychology analysis, and financial AI simulation.
+              </AlertDescription>
+            </Alert>
+          </CardHeader>
+          <CardContent className="space-y-6 font-body">
+            <div className="grid md:grid-cols-2 gap-4">
+              <Skeleton className="w-full h-[300px] md:h-[350px] rounded-md bg-background/30 flex items-center justify-center text-muted-foreground">Chart Area 1: Awaiting Symbol</Skeleton>
+              <Skeleton className="w-full h-[300px] md:h-[350px] rounded-md bg-background/30 flex items-center justify-center text-muted-foreground">Chart Area 2: Awaiting Symbol</Skeleton>
+            </div>
+            <div className="text-center">
+              <h3 className="font-semibold text-lg mb-1 text-foreground">Strategy Explanation:</h3>
+              <Skeleton className="h-20 w-full max-w-2xl mx-auto bg-muted/50" />
+              <p className="text-muted-foreground text-sm mt-2">Enter your criteria above to generate an AI strategy.</p>
+            </div>
+            <Separator />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-center">
+              <div>
+                <h4 className="font-medium text-primary">Fetched Current Price:</h4>
+                <p className="text-2xl font-bold text-foreground">N/A</p>
+              </div>
+              <div>
+                  <h4 className="font-medium text-foreground">AI Confidence Level:</h4>
+                  <p className="text-lg font-semibold text-muted-foreground">N/A</p>
+              </div>
+            </div>
+            <div className="text-center">
+                <h4 className="font-medium text-destructive flex items-center justify-center gap-2"><AlertTriangle className="h-5 w-5" /> Risk Warnings:</h4>
+                <p className="text-muted-foreground text-sm mt-1">Warnings (if any) will appear here.</p>
+            </div>
+            <Separator />
+            <div className="text-center">
+              <h3 className="font-semibold text-lg mb-1 text-foreground">Disclaimer:</h3>
+              <p className="text-muted-foreground text-xs italic">
+                QuantumGPT, powered by Blocksmith AI, was developed following extensive research in quantitative finance, market intelligence, and applied machine learning. Our models are built to deliver adaptive trading insights, deep behavioral analytics, and tailored strategies through real-time data analysis and visualization.
+                While QuantumGPT provides cutting-edge analytical tools, it is not a financial advisor. Blocksmith AI assumes no liability for losses or outcomes related to the use of QuantumGPT.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-card/70 backdrop-blur-sm border-slate-700 shadow-xl mt-6">
+            <CardHeader>
+                <CardTitle className="font-headline text-lg text-center text-foreground">AI Trade Suggestion Overview</CardTitle>
+            </CardHeader>
+            <CardContent className="text-center">
+                <p className="text-muted-foreground font-body">Trade parameters and specific suggestions will appear here after analysis.</p>
             </CardContent>
         </Card>
+        </>
       )}
     </div>
   );
