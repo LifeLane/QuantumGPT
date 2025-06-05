@@ -59,7 +59,7 @@ export default function TradingStrategyForm() {
     } else if (selectedUISentiment === 'bearish') {
       aiSentiment = 'bearish';
     } else {
-      aiSentiment = undefined; // Neutral means general analysis
+      aiSentiment = undefined; // Neutral means general analysis, no specific sentiment passed for that param
     }
 
     const inputForAI: SuggestTradingStrategyInput = {
@@ -110,7 +110,7 @@ export default function TradingStrategyForm() {
         symbols: [[`${currentSymbolForWidget.toUpperCase()}|1D`]],
         chartOnly: false,
         width: "100%",
-        height: "100%", // Make widget fill container
+        height: "100%", 
         locale: "en",
         colorTheme: "dark",
         autosize: true,
@@ -129,7 +129,7 @@ export default function TradingStrategyForm() {
         maLineColor: "#2962FF",
         maLineWidth: 1,
         maLength: 9,
-        backgroundColor: "rgba(0, 0, 0, 0)", // Transparent background
+        backgroundColor: "rgba(0, 0, 0, 0)", 
         lineWidth: 2,
         lineType: 0,
         dateRanges: ["1d", "1w", "1m", "3m", "1y", "all"],
@@ -138,7 +138,7 @@ export default function TradingStrategyForm() {
       const widgetContainerId1 = `tradingview-chart1-${currentSymbolForWidget.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
       const container1 = document.getElementById(widgetContainerId1);
       if (container1) {
-        container1.innerHTML = ''; // Clear previous widget
+        container1.innerHTML = ''; 
         new window.TradingView.MediumWidget({
           ...commonConfig,
           container_id: widgetContainerId1,
@@ -148,10 +148,9 @@ export default function TradingStrategyForm() {
       const widgetContainerId2 = `tradingview-chart2-${currentSymbolForWidget.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
       const container2 = document.getElementById(widgetContainerId2);
       if (container2) {
-        container2.innerHTML = ''; // Clear previous widget
+        container2.innerHTML = ''; 
         new window.TradingView.MediumWidget({
           ...commonConfig,
-          // You could slightly vary config for 2nd chart if needed, e.g. different chartType or studies. For now, identical.
           container_id: widgetContainerId2,
         });
       }
@@ -181,7 +180,7 @@ export default function TradingStrategyForm() {
     if (selectedRiskTolerance === 'low') return "Low Risk";
     if (selectedRiskTolerance === 'medium') return "Medium Risk";
     if (selectedRiskTolerance === 'high') return "High Risk";
-    return "Medium Risk"; // Default
+    return "Medium Risk"; 
   };
 
 
@@ -206,7 +205,7 @@ export default function TradingStrategyForm() {
                 control={form.control}
                 name="cryptocurrency"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="flex flex-col items-center">
                     <FormLabel className="text-foreground font-body text-center block">Cryptocurrency Symbol</FormLabel>
                     <FormControl>
                       <Input placeholder="e.g., BTC, ETH, SOL" {...field} className="text-base font-body max-w-md mx-auto"/>
@@ -280,7 +279,7 @@ export default function TradingStrategyForm() {
                   <LineChart className="h-5 w-5 text-accent" />
                   AI Strategy for {form.getValues("cryptocurrency").toUpperCase()}
               </CardTitle>
-              <div className="text-sm text-muted-foreground font-body">
+              <div className="text-sm text-muted-foreground font-body text-center">
                 Analysis based on:
                 Market View: <span className="font-semibold text-foreground">{getSentimentDisplayText()}</span> |
                 Risk Tolerance: <span className="font-semibold text-foreground">{getRiskToleranceDisplayText()}</span>
@@ -288,10 +287,7 @@ export default function TradingStrategyForm() {
               <Alert variant="default" className="mt-2 bg-background/50 border-border text-sm text-left">
                 <AlertTitle className="font-semibold font-body text-foreground">Live Data Notice & Disclaimer</AlertTitle>
                 <AlertDescription className="text-muted-foreground font-body">
-                  The "Fetched Current Price" is attempted to be sourced live via the Messari API.
-                  If live data is unavailable, it may show N/A.
-                  All other figures and the strategy explanation are AI-generated illustrative examples based on this price and simulated chart analysis, considering your stated market sentiment and risk tolerance.
-                  This is NOT financial advice. Always do your own research and consult a financial advisor. Trading involves substantial risk of loss.
+                  Blocksmith AI and QuantumGPT are research-driven, AI-powered platforms. $BSAI is a utility token, not a security, and is intended for platform access and governance. Cryptocurrency investments carry inherent risk. QuantumGPT outputs are for educational use only and do not constitute financial advice. Users must perform their own due diligence and comply with regional regulations.
                 </AlertDescription>
               </Alert>
             </CardHeader>
@@ -369,4 +365,3 @@ export default function TradingStrategyForm() {
     </div>
   );
 }
-
