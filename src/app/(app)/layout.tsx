@@ -4,7 +4,6 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-// import { useRouter } from "next/navigation"; // For logout
 import {
   SidebarProvider,
   Sidebar,
@@ -20,52 +19,21 @@ import {
 import { Button } from "@/components/ui/button";
 import { LogoIcon } from "@/components/icons/LogoIcon";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Settings, LogOut, LayoutDashboard, Bot, ListChecks, Bell, LineChart } from "lucide-react"; // Removed Search icon
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useToast } from "@/hooks/use-toast";
+import { LayoutDashboard, Bot, ListChecks, Bell, LineChart } from "lucide-react";
 import MatrixRain from "@/components/effects/MatrixRain";
-
 import Footer from "@/components/layout/Footer";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  // { href: "/screener", label: "Crypto Screener", icon: Search }, // Removed Crypto Screener
   { href: "/strategy", label: "AI Strategy", icon: Bot },
   { href: "/watchlist", label: "Watchlist", icon: ListChecks },
   { href: "/alerts", label: "Price Alerts", icon: Bell },
   { href: "/charting", label: "Charting Tools", icon: LineChart },
-  { href: "/account/settings", label: "Account Settings", icon: Settings },
+  // { href: "/account/settings", label: "Account Settings", icon: Settings }, // Removed account settings
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { toast } = useToast();
-  // const router = useRouter(); // For logout
-
-  const handleLogout = async () => {
-    // Simulate logout
-    try {
-      const response = await fetch('/api/auth/logout', { method: 'POST' });
-      const result = await response.json();
-      if (response.ok) {
-        toast({ title: "Logged Out", description: "You have been successfully logged out." });
-        // router.push('/login'); // Redirect to login after logout
-         console.log("Logout successful (simulated)", result);
-      } else {
-        toast({ title: "Logout Failed", description: result.message || "Could not log out.", variant: "destructive" });
-      }
-    } catch (error) {
-        toast({ title: "Logout Error", description: "An unexpected error occurred.", variant: "destructive"});
-    }
-  };
 
   return (
     <SidebarProvider defaultOpen>
@@ -100,32 +68,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </ScrollArea>
         </SidebarContent>
         <SidebarFooter className="p-4 border-t border-sidebar-border">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center justify-start gap-2 w-full px-2">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src="https://placehold.co/40x40.png" alt="Quantum User" data-ai-hint="user avatar"/>
-                  <AvatarFallback>QG</AvatarFallback>
-                </Avatar>
-                {/* In a real app, display actual user name */}
-                <span className="font-medium group-data-[collapsible=icon]:hidden">Quantum User</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent side="top" align="start" className="w-56">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/account/settings">
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleLogout}>
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Log out</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* User avatar and logout removed */}
+          <div className="text-xs text-muted-foreground text-center">
+            Quantum GPT Alpha
+          </div>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset className="flex flex-col relative"> {/* Added relative positioning */}

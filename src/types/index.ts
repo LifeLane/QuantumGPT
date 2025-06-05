@@ -1,14 +1,7 @@
 
 // Central place for shared TypeScript types
 
-export interface User {
-  id: string;
-  name?: string | null;
-  email?: string | null;
-  // Add other user-related fields as needed
-  // e.g., image?: string | null;
-  // e.g., role?: 'user' | 'admin';
-}
+// User type removed as authentication is removed
 
 // You might define other shared types here, for example:
 // export interface Subscription {
