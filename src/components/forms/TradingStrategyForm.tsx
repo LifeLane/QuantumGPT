@@ -24,7 +24,7 @@ const tradingStrategyFormSchema = z.object({
 type TradingStrategyFormValues = z.infer<typeof tradingStrategyFormSchema>;
 
 type UserUISentiment = "bullish" | "neutral" | "bearish";
-type AISentiment = "bullish" | "bearish" | undefined;
+type AISentiment = "bullish" | "bearish" | undefined; // For AI input
 type UserRiskTolerance = "low" | "medium" | "high";
 
 declare global {
@@ -59,7 +59,7 @@ export default function TradingStrategyForm() {
     } else if (selectedUISentiment === 'bearish') {
       aiSentiment = 'bearish';
     } else {
-      aiSentiment = undefined;
+      aiSentiment = undefined; // Neutral means general analysis
     }
 
     const inputForAI: SuggestTradingStrategyInput = {
@@ -106,38 +106,53 @@ export default function TradingStrategyForm() {
 
   React.useEffect(() => {
     if (currentSymbolForWidget && window.TradingView && typeof window.TradingView.MediumWidget === 'function') {
-      const widgetContainerId = `tradingview-symbol-overview-${currentSymbolForWidget.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
-      const container = document.getElementById(widgetContainerId);
-      if (container) {
-        container.innerHTML = '';
+      const commonConfig = {
+        symbols: [[`${currentSymbolForWidget.toUpperCase()}|1D`]],
+        chartOnly: false,
+        width: "100%",
+        height: "100%", // Make widget fill container
+        locale: "en",
+        colorTheme: "dark",
+        autosize: true,
+        showVolume: true,
+        hideDateRanges: false,
+        hideMarketStatus: false,
+        hideSymbolLogo: false,
+        scalePosition: "right",
+        scaleMode: "Normal",
+        fontFamily: "Inter, sans-serif",
+        fontSize: "12",
+        noTimeScale: false,
+        valuesTracking: "1",
+        changeMode: "price-and-percent",
+        chartType: "area",
+        maLineColor: "#2962FF",
+        maLineWidth: 1,
+        maLength: 9,
+        backgroundColor: "rgba(0, 0, 0, 0)", // Transparent background
+        lineWidth: 2,
+        lineType: 0,
+        dateRanges: ["1d", "1w", "1m", "3m", "1y", "all"],
+      };
+
+      const widgetContainerId1 = `tradingview-chart1-${currentSymbolForWidget.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+      const container1 = document.getElementById(widgetContainerId1);
+      if (container1) {
+        container1.innerHTML = ''; // Clear previous widget
         new window.TradingView.MediumWidget({
-          symbols: [[`${currentSymbolForWidget.toUpperCase()}|1D`]],
-          chartOnly: false,
-          width: "100%",
-          height: 300,
-          locale: "en",
-          colorTheme: "dark",
-          autosize: true,
-          showVolume: true,
-          hideDateRanges: false,
-          hideMarketStatus: false,
-          hideSymbolLogo: false,
-          scalePosition: "right",
-          scaleMode: "Normal",
-          fontFamily: "Inter, sans-serif",
-          fontSize: "12",
-          noTimeScale: false,
-          valuesTracking: "1",
-          changeMode: "price-and-percent",
-          chartType: "area",
-          maLineColor: "#2962FF",
-          maLineWidth: 1,
-          maLength: 9,
-          backgroundColor: "rgba(0, 0, 0, 0)",
-          lineWidth: 2,
-          lineType: 0,
-          dateRanges: ["1d", "1w", "1m", "3m", "1y", "all"],
-          container_id: widgetContainerId,
+          ...commonConfig,
+          container_id: widgetContainerId1,
+        });
+      }
+
+      const widgetContainerId2 = `tradingview-chart2-${currentSymbolForWidget.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+      const container2 = document.getElementById(widgetContainerId2);
+      if (container2) {
+        container2.innerHTML = ''; // Clear previous widget
+        new window.TradingView.MediumWidget({
+          ...commonConfig,
+          // You could slightly vary config for 2nd chart if needed, e.g. different chartType or studies. For now, identical.
+          container_id: widgetContainerId2,
         });
       }
     }
@@ -173,12 +188,12 @@ export default function TradingStrategyForm() {
   return (
     <div className="space-y-8">
       <Card className="bg-card/70 backdrop-blur-sm border-slate-700 shadow-xl">
-        <CardHeader>
+        <CardHeader className="text-center">
           <CardTitle className="font-headline text-2xl flex items-center justify-center gap-2 text-foreground">
             <Lightbulb className="h-6 w-6 text-primary" />
             AI Trading Strategy
           </CardTitle>
-          <CardDescription className="text-muted-foreground font-body text-center">
+          <CardDescription className="text-muted-foreground font-body">
             Get AI-powered trading strategy suggestions.
             The AI attempts to use live market data.
             Select your market view (optional) and risk tolerance.
@@ -192,16 +207,16 @@ export default function TradingStrategyForm() {
                 name="cryptocurrency"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-foreground font-body">Cryptocurrency Symbol</FormLabel>
+                    <FormLabel className="text-foreground font-body text-center block">Cryptocurrency Symbol</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., BTC, ETH, SOL" {...field} className="text-base font-body"/>
+                      <Input placeholder="e.g., BTC, ETH, SOL" {...field} className="text-base font-body max-w-md mx-auto"/>
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-center" />
                   </FormItem>
                 )}
               />
 
-              <div className="space-y-6"> {/* Changed from grid to space-y for vertical stacking */}
+              <div className="space-y-6">
                 <FormItem className="flex flex-col items-center space-y-2">
                   <FormLabel className="text-foreground font-body">Your Market View (Optional)</FormLabel>
                   <Tabs value={selectedUISentiment} onValueChange={(value) => setSelectedUISentiment(value as UserUISentiment)} className="w-auto max-w-md">
@@ -260,17 +275,17 @@ export default function TradingStrategyForm() {
       {strategy && !isLoading && (
         <>
           <Card className="bg-card/70 backdrop-blur-sm border-slate-700 shadow-xl mt-6">
-            <CardHeader>
+            <CardHeader className="text-center">
               <CardTitle className="font-headline text-xl flex items-center justify-center gap-2 text-foreground">
                   <LineChart className="h-5 w-5 text-accent" />
                   AI Strategy for {form.getValues("cryptocurrency").toUpperCase()}
               </CardTitle>
-              <div className="text-sm text-muted-foreground font-body text-center">
+              <div className="text-sm text-muted-foreground font-body">
                 Analysis based on:
                 Market View: <span className="font-semibold text-foreground">{getSentimentDisplayText()}</span> |
                 Risk Tolerance: <span className="font-semibold text-foreground">{getRiskToleranceDisplayText()}</span>
               </div>
-              <Alert variant="default" className="mt-2 bg-background/50 border-border text-sm">
+              <Alert variant="default" className="mt-2 bg-background/50 border-border text-sm text-left">
                 <AlertTitle className="font-semibold font-body text-foreground">Live Data Notice & Disclaimer</AlertTitle>
                 <AlertDescription className="text-muted-foreground font-body">
                   The "Fetched Current Price" is attempted to be sourced live via the Messari API.
@@ -282,16 +297,19 @@ export default function TradingStrategyForm() {
             </CardHeader>
             <CardContent className="space-y-6 font-body">
               {currentSymbolForWidget && (
-                  <div id={`tradingview-symbol-overview-${currentSymbolForWidget.toLowerCase().replace(/[^a-z0-9]/g, '')}`} className="w-full h-[300px] rounded-md overflow-hidden shadow-inner bg-background/30"/>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div id={`tradingview-chart1-${currentSymbolForWidget.toLowerCase().replace(/[^a-z0-9]/g, '')}`} className="w-full h-[300px] md:h-[350px] rounded-md overflow-hidden shadow-inner bg-background/30"/>
+                    <div id={`tradingview-chart2-${currentSymbolForWidget.toLowerCase().replace(/[^a-z0-9]/g, '')}`} className="w-full h-[300px] md:h-[350px] rounded-md overflow-hidden shadow-inner bg-background/30"/>
+                  </div>
               )}
-              <div>
-                <h3 className="font-semibold text-lg mb-1 text-foreground text-center">Strategy Explanation:</h3>
-                <p className="text-muted-foreground text-sm whitespace-pre-line">{strategy.strategyExplanation}</p>
+              <div className="text-center">
+                <h3 className="font-semibold text-lg mb-1 text-foreground">Strategy Explanation:</h3>
+                <p className="text-muted-foreground text-sm whitespace-pre-line text-left">{strategy.strategyExplanation}</p>
               </div>
 
               <Separator />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-center md:text-left">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-center">
                 <div>
                   <h4 className="font-medium text-primary">Fetched Current Price:</h4>
                   <p className="text-2xl font-bold text-foreground">{strategy.currentPrice !== undefined && strategy.currentPrice !== null ? `$${formatPrice(strategy.currentPrice)}` : 'N/A'}</p>
@@ -305,9 +323,9 @@ export default function TradingStrategyForm() {
               </div>
 
               {strategy.riskWarnings && strategy.riskWarnings.length > 0 && (
-                <div className="text-center md:text-left">
-                  <h4 className="font-medium text-destructive flex items-center justify-center md:justify-start gap-2"><AlertTriangle className="h-5 w-5" /> Risk Warnings:</h4>
-                  <ul className="list-disc list-inside text-sm text-destructive/90 dark:text-red-400/90 space-y-1 mt-1">
+                <div className="text-center">
+                  <h4 className="font-medium text-destructive flex items-center justify-center gap-2"><AlertTriangle className="h-5 w-5" /> Risk Warnings:</h4>
+                  <ul className="list-disc list-inside text-sm text-destructive/90 dark:text-red-400/90 space-y-1 mt-1 text-left max-w-md mx-auto">
                     {strategy.riskWarnings.map((warning, index) => (
                       <li key={index}>{warning}</li>
                     ))}
@@ -317,7 +335,7 @@ export default function TradingStrategyForm() {
 
               <Separator />
 
-              <div className="text-center md:text-left">
+              <div className="text-center">
                 <h3 className="font-semibold text-lg mb-1 text-foreground">Disclaimer:</h3>
                 <p className="text-muted-foreground text-xs italic">{strategy.disclaimer}</p>
               </div>
@@ -341,8 +359,8 @@ export default function TradingStrategyForm() {
 
       {!isLoading && !strategy && (
         <Card className="bg-card/70 backdrop-blur-sm border-slate-700 shadow-xl">
-            <CardContent className="pt-6">
-                <p className="text-center text-muted-foreground font-body">
+            <CardContent className="pt-6 text-center">
+                <p className="text-muted-foreground font-body">
                     Enter a cryptocurrency symbol, select your market view (optional), and define your risk tolerance to get an AI-powered trading strategy.
                 </p>
             </CardContent>
