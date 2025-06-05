@@ -39,7 +39,6 @@ const navItems = [
 interface MarketGlanceCoin {
   name: string;
   symbol: string;
-  // Using `any` for specific metrics that vary between volume/gainer
   metricValue: number; 
 }
 interface MarketGlanceData {
@@ -250,6 +249,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
+    
+
     
 
     
