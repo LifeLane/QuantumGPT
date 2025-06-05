@@ -135,7 +135,7 @@ export default function TradingStrategyForm() {
         noTimeScale: false,
         valuesTracking: "1",
         changeMode: "price-and-percent",
-        chartType: "line", // Changed from "area" to "line"
+        chartType: "line", 
         maLineColor: "#2962FF",
         maLineWidth: 1,
         maLength: 9,
@@ -197,7 +197,8 @@ export default function TradingStrategyForm() {
 
 
   return (
-    <div className="h-full overflow-y-auto space-y-6 flex-shrink-0 p-4 md:p-6 lg:p-8 w-[calc(100vw-var(--sidebar-width,0rem)-2rem)] md:w-[60rem] lg:w-[70rem]">
+    // Root div no longer has fixed width or page-level padding
+    <div className="space-y-6"> 
       <Card className="bg-card/70 backdrop-blur-sm border-slate-700 shadow-xl">
         <CardHeader className="text-center">
           <CardTitle className="font-headline text-xl sm:text-2xl lg:text-3xl flex items-center justify-center gap-2 text-foreground">
@@ -452,4 +453,3 @@ export default function TradingStrategyForm() {
     </div>
   );
 }
-

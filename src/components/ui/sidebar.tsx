@@ -180,7 +180,7 @@ const Sidebar = React.forwardRef<
     if (collapsible === "none") {
       return (
         <div
-          className={cn(
+          className={cn( // Removed fixed width on mobile by removing the `w-[--sidebar-width]` class here. The SheetContent below handles mobile width.
             "flex h-full w-[--sidebar-width] flex-col bg-sidebar text-sidebar-foreground",
             className
           )}
@@ -198,7 +198,7 @@ const Sidebar = React.forwardRef<
           <SheetContent
             data-sidebar="sidebar"
             data-mobile="true"
-            className="w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
+            className="w-full bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden" // Made SheetContent full width on mobile
             style={
               {
                 "--sidebar-width": SIDEBAR_WIDTH_MOBILE,

@@ -11,12 +11,11 @@ import { BarChart3, Bot } from 'lucide-react';
 export default function DashboardPage() {
 
   return (
-    // Main container for horizontal flow
-    <div className="flex flex-row items-start h-full min-w-max py-2 space-x-6">
+    <div className="flex flex-col md:flex-row items-start h-full w-full py-2 md:space-x-6 space-y-6 md:space-y-0">
       
       {/* Welcome Text and Feature Cards container - as a column */}
-      <div className="flex flex-col space-y-6 flex-shrink-0"> {/* Added fixed width for stability */}
-        <div>
+      <div className="flex flex-col space-y-6 w-full md:w-auto">
+        <div className="w-full">
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-headline font-semibold text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-primary animate-pulse">
             Welcome to Quantum GPT!
           </h1>
@@ -26,8 +25,8 @@ export default function DashboardPage() {
         </div>
 
         {/* Feature Cards - arranged horizontally within their parent column */}
-        <div className="flex flex-row space-x-6">
-          <Card className="bg-card/70 backdrop-blur-sm border-slate-700 shadow-lg hover:shadow-primary/30 transition-all duration-300 ease-in-out hover:scale-105 flex-shrink-0 w-72">
+        <div className="flex flex-col md:flex-row space-y-6 md:space-y-0 md:space-x-6 w-full">
+          <Card className="bg-card/70 backdrop-blur-sm border-slate-700 shadow-lg hover:shadow-primary/30 transition-all duration-300 ease-in-out hover:scale-105 w-full md:w-72">
             <CardHeader>
               <CardTitle className="font-headline text-lg md:text-xl flex items-center gap-2">
                 <Bot className="h-7 w-7 text-accent" />
@@ -42,7 +41,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-card/70 backdrop-blur-sm border-slate-700 shadow-lg hover:shadow-primary/30 transition-all duration-300 ease-in-out hover:scale-105 flex-shrink-0 w-72">
+          <Card className="bg-card/70 backdrop-blur-sm border-slate-700 shadow-lg hover:shadow-primary/30 transition-all duration-300 ease-in-out hover:scale-105 w-full md:w-72">
             <CardHeader>
               <CardTitle className="font-headline text-lg md:text-xl flex items-center gap-2">
                 <BarChart3 className="h-7 w-7 text-accent" />
@@ -60,9 +59,6 @@ export default function DashboardPage() {
           {/* "My Watchlist" card removed */}
         </div>
       </div>
-
-      {/* Other sections of the dashboard would go here, also as flex-shrink-0 columns with defined widths */}
-      {/* Example: <div className="flex-shrink-0 w-[another-fixed-width]">...content...</div> */}
 
     </div>
   );
