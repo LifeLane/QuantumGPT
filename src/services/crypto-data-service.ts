@@ -24,7 +24,7 @@ function normalizeSymbolForMessari(symbol: string): string {
   for (const pair of commonPairs) {
     if (normalized.endsWith(pair) && normalized.length > pair.length) {
       normalized = normalized.substring(0, normalized.length - pair.length);
-      break; 
+      break;
     }
   }
   return normalized;
@@ -37,11 +37,11 @@ function normalizeSymbolForMessari(symbol: string): string {
  */
 export async function fetchRealTimeData(originalSymbol: string): Promise<MarketData | null> {
   const messariSymbol = normalizeSymbolForMessari(originalSymbol);
-  const apiKey = process.env.COINDESK_API_KEY;
+  const apiKey = process.env.COINDESK_API_KEY; // Note: User needs to set this to their Messari API key
 
   if (!apiKey) {
-    console.warn(`CryptoDataService: COINDESK_API_KEY is not set. Falling back to mock data for ${originalSymbol}.`);
-    return getMockData(originalSymbol, messariSymbol);
+    console.warn(`CryptoDataService: COINDESK_API_KEY (for Messari) is not set. Falling back to mock data for ${originalSymbol}.`);
+    return getMockData(originalSymbol);
   }
 
   const url = `https://data.messari.io/api/v1/assets/${messariSymbol}/metrics`;
@@ -54,71 +54,73 @@ export async function fetchRealTimeData(originalSymbol: string): Promise<MarketD
     const response = await fetch(url, { headers });
 
     if (!response.ok) {
-      const errorData = await response.text();
-      console.error(`CryptoDataService: Messari API error for ${messariSymbol} (status ${response.status}):`, errorData.slice(0, 500)); // Log snippet of error
-      console.warn(`CryptoDataService: Falling back to mock data for ${originalSymbol} due to API error.`);
-      return getMockData(originalSymbol, messariSymbol);
+      const errorText = await response.text();
+      console.error(`CryptoDataService: Messari API error for ${messariSymbol} (status ${response.status}): ${errorText.substring(0, 200)}...`);
+      console.warn(`CryptoDataService: Falling back to MOCK data for ${originalSymbol} due to API error from Messari.`);
+      return getMockData(originalSymbol);
     }
 
     const jsonResponse = await response.json();
 
     if (jsonResponse.data && jsonResponse.data.market_data) {
       const marketData = jsonResponse.data.market_data;
+      const fetchedSymbol = jsonResponse.data.symbol || originalSymbol.toUpperCase();
+      console.log(`CryptoDataService: Successfully fetched live data for ${fetchedSymbol} from Messari.`);
       return {
-        symbol: jsonResponse.data.symbol || originalSymbol.toUpperCase(), // Use symbol from API or fallback to original
+        symbol: fetchedSymbol,
         price: marketData.price_usd,
         volume24h: marketData.volume_last_24_hours,
         priceChange24hPercent: marketData.percent_change_usd_last_24_hours,
       };
     } else {
-      console.warn(`CryptoDataService: Unexpected response structure from Messari for ${messariSymbol}. Full response:`, JSON.stringify(jsonResponse, null, 2).slice(0, 1000));
-      console.warn(`CryptoDataService: Falling back to mock data for ${originalSymbol}.`);
-      return getMockData(originalSymbol, messariSymbol);
+      console.warn(`CryptoDataService: Unexpected response structure from Messari for ${messariSymbol}. Full response (truncated):`, JSON.stringify(jsonResponse, null, 2).substring(0, 500));
+      console.warn(`CryptoDataService: Falling back to MOCK data for ${originalSymbol} due to unexpected response structure.`);
+      return getMockData(originalSymbol);
     }
   } catch (error) {
-    console.error(`CryptoDataService: Error fetching data from Messari for ${messariSymbol}:`, error);
-    console.warn(`CryptoDataService: Falling back to mock data for ${originalSymbol} due to fetch error.`);
-    return getMockData(originalSymbol, messariSymbol);
+    console.error(`CryptoDataService: Network or other error fetching data from Messari for ${messariSymbol}:`, error);
+    console.warn(`CryptoDataService: Falling back to MOCK data for ${originalSymbol} due to fetch error.`);
+    return getMockData(originalSymbol);
   }
 }
 
 /**
  * Provides basic mock data as a fallback.
  * @param originalSymbol The original cryptocurrency symbol input by the user.
- * @param normalizedSymbol The symbol normalized for API calls (e.g., "btc", "eth").
  * @returns Mock MarketData or null.
  */
-function getMockData(originalSymbol: string, normalizedSymbol: string): MarketData | null {
-  const displaySymbol = originalSymbol.includes(':') ? originalSymbol.toUpperCase() : normalizedSymbol.toUpperCase();
-  console.log(`CryptoDataService: Providing MOCK data for ${originalSymbol} (normalized: ${normalizedSymbol}).`);
+function getMockData(originalSymbol: string): MarketData | null {
+  const displaySymbol = originalSymbol.toUpperCase();
+  const normalizedForMock = normalizeSymbolForMessari(originalSymbol); // Use the same normalization for mock keys
 
-  if (normalizedSymbol === "btc") {
+  console.log(`CryptoDataService: Providing MOCK data for ${displaySymbol} (normalized for mock lookup: ${normalizedForMock}).`);
+
+  if (normalizedForMock === "btc") {
     return {
-      symbol: displaySymbol,
-      price: 68000 + Math.random() * 1000 - 500, // More stable mock
+      symbol: "BTC", // Standardized symbol
+      price: 68000 + Math.random() * 1000 - 500,
       volume24h: 24000000000.34,
-      priceChange24hPercent: (Math.random() - 0.5) * 2, // Smaller fluctuation
+      priceChange24hPercent: (Math.random() - 0.5) * 2,
     };
-  } else if (normalizedSymbol === "eth") {
+  } else if (normalizedForMock === "eth") {
     return {
-      symbol: displaySymbol,
-      price: 3800 + Math.random() * 100 - 50, // More stable mock
+      symbol: "ETH", // Standardized symbol
+      price: 3800 + Math.random() * 100 - 50,
       volume24h: 14000000000.78,
-      priceChange24hPercent: (Math.random() - 0.5) * 3, // Smaller fluctuation
+      priceChange24hPercent: (Math.random() - 0.5) * 3,
     };
-  } else if (normalizedSymbol === "sol") {
+  } else if (normalizedForMock === "sol") {
      return {
-      symbol: displaySymbol,
+      symbol: "SOL", // Standardized symbol
       price: 160 + Math.random() * 20 - 10,
       volume24h: 1900000000.45,
       priceChange24hPercent: (Math.random() - 0.5) * 5,
     };
   }
-  // Generic mock for other symbols if specifically requested or as a deep fallback
-  console.warn(`CryptoDataService: No specific mock data for ${normalizedSymbol}. Returning generic random mock.`);
+  console.warn(`CryptoDataService: No specific mock data for ${normalizedForMock}. Returning generic random mock for ${displaySymbol}.`);
   return {
     symbol: displaySymbol,
-    price: 100 + (Math.random() - 0.5) * 50, // Wider random range
+    price: 100 + (Math.random() - 0.5) * 50,
     volume24h: 100000000 + (Math.random() - 0.5) * 50000000,
     priceChange24hPercent: (Math.random() - 0.5) * 10,
   };
@@ -136,3 +138,4 @@ export async function fetchMarketOverview(): Promise<MarketData[]> {
   const results = await Promise.all(symbols.map(s => fetchRealTimeData(s)));
   return results.filter(Boolean) as MarketData[];
 }
+

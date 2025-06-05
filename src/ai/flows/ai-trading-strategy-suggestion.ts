@@ -41,7 +41,7 @@ export async function suggestTradingStrategy(input: SuggestTradingStrategyInput)
 
 const prompt = ai.definePrompt({
   name: 'suggestTradingStrategyPrompt',
-  input: {schema: z.object({ 
+  input: {schema: z.object({
     cryptocurrency: SuggestTradingStrategyInputSchema.shape.cryptocurrency,
     riskTolerance: SuggestTradingStrategyInputSchema.shape.riskTolerance,
     marketData: MarketDataSchema.nullable().describe("Current market data for the cryptocurrency. This will be fetched by a tool prior to calling you."),
@@ -58,33 +58,34 @@ Current Market Data (from tool):
 - 24h Volume: {{#if marketData.volume24h}}{{marketData.volume24h}}{{else}}not available{{/if}}
 - 24h Price Change: {{#if marketData.priceChange24hPercent}}{{marketData.priceChange24hPercent}}%{{else}}not available{{/if}}
 
-Begin by analyzing the current market data for {{{cryptocurrency}}} as if you are looking at a TradingView chart.
-Consider general principles of technical analysis:
-- Identify the current trend (uptrend, downtrend, sideways).
-- Note key support and resistance levels based on the current price.
-- Look for common chart patterns (e.g., triangles, head and shoulders, flags) that might be forming or recently completed.
-- Consider signals from common technical indicators (e.g., Moving Averages crossovers, RSI overbought/oversold levels, MACD signals).
+Begin by *simulating* an analysis of this market data as if you were interpreting a TradingView chart.
+Your analysis should be based *solely* on the provided market data (price, volume, 24h change).
+Based on this data, infer potential:
+- Current trend (uptrend, downtrend, sideways).
+- Key support and resistance levels relative to the current price.
+- Plausible chart patterns (e.g., triangles, head and shoulders, flags) that might be forming or recently completed given the data context.
+- Potential signals from common technical indicators (e.g., Moving Averages crossovers, RSI overbought/oversold levels, MACD signals) that could be implied by the current price action and volume.
 
-Based on this "chart-like" analysis and considering the user's risk tolerance ({{{riskTolerance}}}), formulate a trading strategy.
+Based on this simulated "chart-like" analysis of the provided data and considering the user's risk tolerance ({{{riskTolerance}}}), formulate a trading strategy.
 
 Your strategy response MUST include:
-- tradePossible: A boolean indicating if a trade is viable.
+- tradePossible: A boolean indicating if a trade is viable based on your simulated analysis of the provided data.
 - suggestedPosition: "Long", "Short", or "None". If tradePossible is false, this must be "None".
-- strategyExplanation: A detailed explanation of your analysis. Why do you suggest this strategy? What chart patterns or indicator signals support it? How does risk tolerance influence it?
-- currentPrice: The price fetched by the tool (repeat it here).
+- strategyExplanation: A detailed explanation of your analysis. Why do you suggest this strategy? What chart patterns or indicator signals (that you've inferred from the data) support it? How does risk tolerance influence it?
+- currentPrice: The price fetched by the tool (repeat it here from the input marketData.price).
 - entryPoint: A suggested price to enter a trade. If tradePossible is false, this must be null.
 - exitPoint: A suggested price to exit a trade if it goes well (e.g., a take profit level). If tradePossible is false, this must be null.
 - stopLossLevel: A suggested price to cut losses if the trade goes against you. If tradePossible is false, this must be null.
 - profitTarget: An alternative or primary profit target. This might be the same as exitPoint or a more ambitious target. If tradePossible is false, this must be null.
 - disclaimer: The standard financial disclaimer.
 
-If market data is not available (marketData is null or marketData.price is null):
-- Your strategyExplanation should state that a strategy cannot be formed due to lack of data.
+If marketData is null or marketData.price is null:
+- Your strategyExplanation should state that a strategy cannot be formed due to lack of market data.
 - Set tradePossible to false.
 - Set suggestedPosition to "None".
 - All price-related fields (currentPrice, entryPoint, exitPoint, stopLossLevel, profitTarget) MUST be null.
 
-If, after analysis, you determine no clear trading opportunity exists even with market data, set tradePossible to false, suggestedPosition to "None", and relevant price-related fields (entryPoint, exitPoint, stopLossLevel, profitTarget) to null. The currentPrice should still reflect the fetched price if available.
+If, after your simulated analysis, you determine no clear trading opportunity exists even with available market data, set tradePossible to false, suggestedPosition to "None", and relevant price-related fields (entryPoint, exitPoint, stopLossLevel, profitTarget) to null. The currentPrice should still reflect the fetched price if available.
 
 Present your response strictly in the JSON format defined by the output schema.
 `,
@@ -96,7 +97,7 @@ const suggestTradingStrategyFlow = ai.defineFlow(
     inputSchema: SuggestTradingStrategyInputSchema,
     outputSchema: SuggestTradingStrategyOutputSchema,
   },
-  async (input: SuggestTradingStrategyInput) => {
+  async (input: SuggestTradingStrategyInput): Promise<SuggestTradingStrategyOutput> => {
     let marketData: MarketData | null = null;
     try {
       console.log(`[AIStrategyFlow] Fetching market data for: ${input.cryptocurrency}`);
@@ -109,12 +110,11 @@ const suggestTradingStrategyFlow = ai.defineFlow(
     console.log(`[AIStrategyFlow] Calling prompt with input:`, { ...input, marketData });
     const {output} = await prompt({
         ...input,
-        marketData: marketData,
+        marketData: marketData, // Pass the fetched (or null) marketData to the prompt
     });
     
     if (!output) {
-        console.error("[AIStrategyFlow] AI model did not return an output.");
-        // Construct a default error output that matches the schema
+        console.error("[AIStrategyFlow] AI model did not return an output. Constructing default error response.");
         return {
             tradePossible: false,
             suggestedPosition: "None",
@@ -129,12 +129,28 @@ const suggestTradingStrategyFlow = ai.defineFlow(
     }
     
     console.log(`[AIStrategyFlow] AI Output for ${input.cryptocurrency}:`, output);
-    // Ensure currentPrice in output matches what the tool provided, or is null if tool failed
+    // Ensure currentPrice in output matches what the tool provided (or is null if tool failed/returned null),
+    // overriding whatever the LLM might have hallucinated for currentPrice if marketData was indeed null.
     const finalOutput = {
         ...output,
-        currentPrice: marketData?.price ?? null, 
+        currentPrice: marketData?.price ?? null,
     };
+
+    // If marketData was null, ensure tradePossible is false and position is None.
+    if (!marketData || marketData.price === null) {
+        finalOutput.tradePossible = false;
+        finalOutput.suggestedPosition = "None";
+        finalOutput.entryPoint = null;
+        finalOutput.exitPoint = null;
+        finalOutput.stopLossLevel = null;
+        finalOutput.profitTarget = null;
+        // Optionally, you might want to overwrite strategyExplanation if data was missing,
+        // but the prompt already guides the LLM to do this.
+        // finalOutput.strategyExplanation = "Strategy cannot be determined due to missing market data.";
+    }
+
 
     return finalOutput;
   }
 );
+

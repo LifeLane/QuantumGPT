@@ -63,12 +63,11 @@ export default function DashboardPage() {
             <CardDescription>Watchlist, Price Alerts and more.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button variant="outline" className="w-full group" disabled>
-              Explore More
+            <Button asChild variant="outline" className="w-full group">
+              <Link href="/watchlist">My Watchlist</Link>
             </Button>
           </CardContent>
         </Card>
-        {/* Account Settings card removed */}
       </div>
 
     </div>

@@ -1,7 +1,6 @@
+'use client';
 
 import InteractiveChart from "@/components/features/InteractiveChart";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LineChart } from "lucide-react";
 
 export default function ChartingPage() {
   return (

@@ -1,7 +1,6 @@
+'use client';
 
 import PriceAlertsManager from "@/components/features/PriceAlertsManager";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bell } from "lucide-react";
 
 export default function AlertsPage() {
   return (

@@ -1,6 +1,6 @@
+'use client';
 
 import TradingStrategyForm from "@/components/forms/TradingStrategyForm";
-import { Bot } from "lucide-react";
 
 export default function StrategyPage() {
   return (
@@ -13,7 +13,6 @@ export default function StrategyPage() {
           </p>
         </div>
       </div>
-      {/* TradingPredictionCard and strategy details will be rendered by TradingStrategyForm */}
       <TradingStrategyForm />
     </div>
   );

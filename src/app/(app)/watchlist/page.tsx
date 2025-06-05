@@ -1,7 +1,6 @@
+'use client';
 
 import WatchlistManager from "@/components/features/WatchlistManager";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ListChecks } from "lucide-react";
 
 export default function WatchlistPage() {
   return (
