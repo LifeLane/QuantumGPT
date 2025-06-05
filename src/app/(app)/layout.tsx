@@ -15,11 +15,14 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarInset,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarGroupContent,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { LogoIcon } from "@/components/icons/LogoIcon";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { LayoutDashboard, Bot, ListChecks, Bell, LineChart } from "lucide-react";
+import { LayoutDashboard, Bot, ListChecks, Bell, LineChart, AreaChart, MinusCircle, Info } from "lucide-react";
 import MatrixRain from "@/components/effects/MatrixRain";
 import Footer from "@/components/layout/Footer";
 
@@ -63,6 +66,38 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+               <SidebarGroup className="p-0 mt-2">
+                <SidebarGroupLabel className="flex items-center gap-2 px-2 text-xs font-medium text-sidebar-foreground/70">
+                  <Info className="h-4 w-4" />
+                  Market At A Glance
+                </SidebarGroupLabel>
+                <SidebarGroupContent className="text-xs space-y-1 p-2 text-sidebar-foreground/90">
+                  <div>
+                    <p className="font-semibold">Market Cap:</p>
+                    <p>$2.41T (Simulated)</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold">Sentiment:</p>
+                    <p className="flex items-center gap-1"><MinusCircle className="h-3 w-3 text-yellow-500" /> Neutral (Simulated)</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold">Top Volume (24h):</p>
+                    <ul className="list-none pl-1">
+                      <li>1. USDT (Simulated)</li>
+                      <li>2. BTC (Simulated)</li>
+                      <li>3. ETH (Simulated)</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="font-semibold">Top Gainers (24h):</p>
+                    <ul className="list-none pl-1">
+                      <li>1. PEPE (Simulated)</li>
+                      <li>2. BONK (Simulated)</li>
+                      <li>3. WIF (Simulated)</li>
+                    </ul>
+                  </div>
+                </SidebarGroupContent>
+              </SidebarGroup>
             </SidebarMenu>
           </ScrollArea>
         </SidebarContent>
@@ -74,7 +109,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </Sidebar>
       <SidebarInset className="h-screen flex flex-col overflow-hidden relative">
         <MatrixRain />
-        <header className="sticky top-0 z-20 flex h-14 items-center justify-start gap-4 border-b bg-background/80 backdrop-blur-sm px-4 md:px-6">
+        <header className="sticky top-0 z-20 flex h-14 items-center justify-start gap-4 border-b bg-background/80 backdrop-blur-sm px-4 md:px-6 flex-shrink-0">
           <SidebarTrigger />
           {/* Other header items can go here if needed */}
         </header>

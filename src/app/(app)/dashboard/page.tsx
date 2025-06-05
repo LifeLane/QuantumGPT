@@ -5,29 +5,18 @@ import * as React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { BarChart3, ListChecks, Bot, TrendingUp } from 'lucide-react';
+import { BarChart3, ListChecks, Bot } from 'lucide-react';
 import MarketScroll from '@/components/features/MarketScroll';
 
 export default function DashboardPage() {
 
   return (
-    <div className="flex flex-row items-start space-x-6 h-full min-w-max py-2">
+    <div className="flex flex-row items-start h-full min-w-max py-2 space-x-6">
       {/* MarketScroll can be a column if desired, or integrated differently */}
       <div className="flex-shrink-0 w-full md:w-[calc(100vw-18rem)]"> {/* Example width for scroll */}
          <MarketScroll />
       </div>
       
-      {/* Daily Crypto Market Insight Section - as a column */}
-      <div className="p-6 bg-card/70 backdrop-blur-sm border border-slate-700 rounded-lg shadow-lg flex-shrink-0 w-[30rem] h-full flex flex-col">
-        <div className="flex items-center gap-3 mb-2">
-          <TrendingUp className="h-8 w-8 text-accent" />
-          <h2 className="text-2xl font-headline font-bold text-foreground">Daily Crypto Pulse</h2>
-        </div>
-        <p className="text-md text-muted-foreground leading-relaxed">
-          BTC holds steady above $68k, ETH eyes a breakout. Altcoin season simmering? QuantumGPT is monitoring key signals 24/7. Your personalized AI insights await below.
-        </p>
-      </div>
-
       {/* Welcome Text and Feature Cards container - as a column */}
       <div className="flex flex-col space-y-6 flex-shrink-0 w-auto">
         <div>
