@@ -287,7 +287,7 @@ export default function TradingStrategyForm() {
               <Alert variant="default" className="mt-2 bg-background/50 border-border text-sm text-left">
                 <AlertTitle className="font-semibold font-body text-foreground">Live Data Notice & Disclaimer</AlertTitle>
                 <AlertDescription className="text-muted-foreground font-body">
-                  Blocksmith AI and QuantumGPT are research-driven, AI-powered platforms. $BSAI is a utility token, not a security, and is intended for platform access and governance. Cryptocurrency investments carry inherent risk. QuantumGPT outputs are for educational use only and do not constitute financial advice. Users must perform their own due diligence and comply with regional regulations.
+                  QuantumGPT isn't just another trading tool — it’s a research-grade intelligence system crafted through months of dedicated blockchain modeling, market psychology analysis, and financial AI simulation.
                 </AlertDescription>
               </Alert>
             </CardHeader>
@@ -365,3 +365,4 @@ export default function TradingStrategyForm() {
     </div>
   );
 }
+
