@@ -36,11 +36,18 @@ const navItems = [
   { href: "/charting", label: "Charting Tools", icon: LineChart },
 ];
 
+interface MarketGlanceCoin {
+  name: string;
+  symbol: string;
+  // Using `any` for specific metrics that vary between volume/gainer
+  metricValue: number; 
+}
 interface MarketGlanceData {
   marketCap: string | null;
   marketCapChange24h: number | null;
-  topVolumeCoins: { name: string; symbol: string; total_volume: number }[];
-  topGainerCoins: { name: string; symbol: string; price_change_percentage_24h: number }[];
+  topVolumeCoins: MarketGlanceCoin[];
+  topGainerCoins: MarketGlanceCoin[];
+  hasError?: boolean; // Flag to indicate if fetching data failed
 }
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -61,28 +68,36 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       setIsLoadingData(true);
       try {
         const globalRes = await fetch('https://api.coingecko.com/api/v3/global');
+        if (!globalRes.ok) {
+          const errorText = await globalRes.text().catch(() => "Could not read error response from global endpoint.");
+          throw new Error(`Failed to fetch global market data: ${globalRes.status} ${globalRes.statusText}. Details: ${errorText.substring(0,150)}`);
+        }
         const globalData = await globalRes.json();
 
         const coinsRes = await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=10&page=1&sparkline=false&price_change_percentage=24h');
+        if (!coinsRes.ok) {
+          const errorText = await coinsRes.text().catch(() => "Could not read error response from coins endpoint.");
+          throw new Error(`Failed to fetch coins market data: ${coinsRes.status} ${coinsRes.statusText}. Details: ${errorText.substring(0,150)}`);
+        }
         const coinsData = await coinsRes.json();
 
         const marketCap = globalData?.data?.total_market_cap?.usd;
         const marketCapChange24h = globalData?.data?.market_cap_change_percentage_24h_usd;
 
-        let topVolumeCoins: MarketGlanceData['topVolumeCoins'] = [];
-        let topGainerCoins: MarketGlanceData['topGainerCoins'] = [];
+        let topVolumeCoins: MarketGlanceCoin[] = [];
+        let topGainerCoins: MarketGlanceCoin[] = [];
 
         if (Array.isArray(coinsData)) {
           topVolumeCoins = [...coinsData]
             .sort((a, b) => (b.total_volume || 0) - (a.total_volume || 0))
             .slice(0, 3)
-            .map(coin => ({ name: coin.name, symbol: coin.symbol.toUpperCase(), total_volume: coin.total_volume }));
+            .map(coin => ({ name: coin.name, symbol: coin.symbol.toUpperCase(), metricValue: coin.total_volume }));
 
           topGainerCoins = [...coinsData]
             .sort((a, b) => (b.price_change_percentage_24h || 0) - (a.price_change_percentage_24h || 0))
             .filter(coin => (coin.price_change_percentage_24h || 0) > 0) 
             .slice(0, 3)
-            .map(coin => ({ name: coin.name, symbol: coin.symbol.toUpperCase(), price_change_percentage_24h: coin.price_change_percentage_24h }));
+            .map(coin => ({ name: coin.name, symbol: coin.symbol.toUpperCase(), metricValue: coin.price_change_percentage_24h }));
         }
         
         setMarketData({
@@ -90,19 +105,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           marketCapChange24h: marketCapChange24h || 0,
           topVolumeCoins,
           topGainerCoins,
+          hasError: false,
         });
 
       } catch (error) {
-        console.error("Failed to fetch market glance data:", error);
+        console.error("Failed to fetch market glance data:", error); // This logs the "Failed to fetch" or other errors
         setMarketData({ 
           marketCap: 'N/A',
           marketCapChange24h: 0,
-          topVolumeCoins: [
-            { name: 'ErrorCoin', symbol: 'ERR', total_volume: 0 },
-          ],
-          topGainerCoins: [
-            { name: 'ErrorCoin', symbol: 'ERR', price_change_percentage_24h: 0 },
-          ],
+          topVolumeCoins: [],
+          topGainerCoins: [],
+          hasError: true, // Set the error flag
         });
       } finally {
         setIsLoadingData(false);
@@ -115,14 +128,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, []);
 
   const getSentimentIcon = () => {
-    if (isLoadingData || !marketData || marketData.marketCapChange24h === null) return <MinusCircle className="h-3 w-3 text-yellow-500" />;
+    if (isLoadingData || !marketData || marketData.marketCapChange24h === null || marketData.hasError) return <MinusCircle className="h-3 w-3 text-yellow-500" />;
     if (marketData.marketCapChange24h > 0.1) return <TrendingUp className="h-3 w-3 text-green-500" />;
     if (marketData.marketCapChange24h < -0.1) return <TrendingDown className="h-3 w-3 text-red-500" />;
     return <MinusCircle className="h-3 w-3 text-yellow-500" />;
   };
 
   const getSentimentText = () => {
-    if (isLoadingData || !marketData || marketData.marketCapChange24h === null) return "Loading...";
+    if (isLoadingData || !marketData || marketData.marketCapChange24h === null || marketData.hasError) return "Loading...";
     if (marketData.marketCapChange24h > 0.1) return `Bullish (${marketData.marketCapChange24h.toFixed(2)}%)`;
     if (marketData.marketCapChange24h < -0.1) return `Bearish (${marketData.marketCapChange24h.toFixed(2)}%)`;
     return `Neutral (${marketData.marketCapChange24h.toFixed(2)}%)`;
@@ -167,6 +180,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <div className="space-y-2 p-2">
                       <p>Loading market data...</p>
                     </div>
+                  ) : marketData?.hasError ? (
+                     <div className="p-2">
+                       <p className="font-semibold text-destructive text-center">Error loading market data.</p>
+                       <p className="text-xs text-muted-foreground text-center">Please check connection.</p>
+                     </div>
                   ) : marketData ? (
                     <Tabs defaultValue="market_cap" className="w-full">
                       <TabsList className="grid w-full grid-cols-2 h-auto mb-2 text-xs p-0.5">
@@ -187,7 +205,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         <p className="font-semibold">Top Volume (24h):</p>
                         <ul className="list-none pl-1">
                           {marketData.topVolumeCoins.length > 0 ? marketData.topVolumeCoins.map((coin, index) => (
-                            <li key={`vol-${index}`}>{index + 1}. {coin.symbol} ({formatMarketCap(coin.total_volume)})</li>
+                            <li key={`vol-${index}`}>{index + 1}. {coin.symbol} ({formatMarketCap(coin.metricValue)})</li>
                           )) : <li>N/A</li>}
                         </ul>
                       </TabsContent>
@@ -195,13 +213,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         <p className="font-semibold">Top Gainers (24h):</p>
                         <ul className="list-none pl-1">
                           {marketData.topGainerCoins.length > 0 ? marketData.topGainerCoins.map((coin, index) => (
-                            <li key={`gain-${index}`}>{index + 1}. {coin.symbol} (+{coin.price_change_percentage_24h.toFixed(2)}%)</li>
+                            <li key={`gain-${index}`}>{index + 1}. {coin.symbol} (+{coin.metricValue.toFixed(2)}%)</li>
                           )) : <li>N/A</li>}
                         </ul>
                       </TabsContent>
                     </Tabs>
                   ) : (
-                     <div className="p-2"><p className="font-semibold text-destructive">Error loading market data.</p></div>
+                     <div className="p-2"><p className="font-semibold text-muted-foreground">Market data unavailable.</p></div>
                   )}
                 </SidebarGroupContent>
               </SidebarGroup>
@@ -232,4 +250,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
+    
+
     
