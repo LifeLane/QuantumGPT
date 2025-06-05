@@ -135,7 +135,7 @@ export default function TradingStrategyForm() {
         noTimeScale: false,
         valuesTracking: "1",
         changeMode: "price-and-percent",
-        chartType: "area",
+        chartType: "line", // Changed from "area" to "line"
         maLineColor: "#2962FF",
         maLineWidth: 1,
         maLength: 9,
@@ -197,14 +197,14 @@ export default function TradingStrategyForm() {
 
 
   return (
-    <div className="space-y-8">
+    <div className="h-full overflow-y-auto space-y-6 flex-shrink-0 p-4 md:p-6 lg:p-8 w-[calc(100vw-var(--sidebar-width,0rem)-2rem)] md:w-[60rem] lg:w-[70rem]">
       <Card className="bg-card/70 backdrop-blur-sm border-slate-700 shadow-xl">
         <CardHeader className="text-center">
-          <CardTitle className="font-headline text-2xl flex items-center justify-center gap-2 text-foreground">
+          <CardTitle className="font-headline text-xl sm:text-2xl lg:text-3xl flex items-center justify-center gap-2 text-foreground">
             <Lightbulb className="h-6 w-6 text-primary" />
             AI Trading Strategy
           </CardTitle>
-          <CardDescription className="text-muted-foreground font-body">
+          <CardDescription className="text-muted-foreground font-body text-sm sm:text-base">
             Get AI-powered trading strategy suggestions.
             The AI attempts to use live market data.
             Select your market view (optional) and risk tolerance.
@@ -291,7 +291,7 @@ export default function TradingStrategyForm() {
         <>
         <Card className="bg-card/70 backdrop-blur-sm border-slate-700 shadow-xl mt-6">
           <CardHeader className="text-center">
-            <CardTitle className="font-headline text-xl flex items-center justify-center gap-2 text-foreground">
+            <CardTitle className="font-headline text-xl sm:text-2xl lg:text-3xl flex items-center justify-center gap-2 text-foreground">
                 <LineChart className="h-5 w-5 text-accent" />
                 AI Strategy for {currentCryptoInput ? currentCryptoInput.toUpperCase() : "Your Crypto"}
             </CardTitle>
@@ -317,7 +317,7 @@ export default function TradingStrategyForm() {
               </div>
             </div>
              <div className="text-sm text-muted-foreground text-center italic">
-                Note: Charts above are simplified area charts with volume, showing daily and weekly perspectives. For detailed candlestick charts, please use the "Charting Tools" page.
+                Note: Charts above are simplified line charts with volume, showing daily and weekly perspectives. For detailed candlestick charts, please use the "Charting Tools" page.
             </div>
             <div className="text-center">
               <h3 className="font-semibold text-lg mb-1 text-foreground">Strategy Explanation:</h3>
@@ -364,7 +364,7 @@ export default function TradingStrategyForm() {
         <>
           <Card className="bg-card/70 backdrop-blur-sm border-slate-700 shadow-xl mt-6">
             <CardHeader className="text-center">
-              <CardTitle className="font-headline text-xl flex items-center justify-center gap-2 text-foreground">
+              <CardTitle className="font-headline text-xl sm:text-2xl lg:text-3xl flex items-center justify-center gap-2 text-foreground">
                   <LineChart className="h-5 w-5 text-accent" />
                   AI Strategy for {form.getValues("cryptocurrency").toUpperCase()}
               </CardTitle>
@@ -394,8 +394,8 @@ export default function TradingStrategyForm() {
                   </div>
               )}
                <div className="text-sm text-muted-foreground text-center italic">
-                Note: Charts above are simplified area charts with volume, showing daily and weekly perspectives. For detailed candlestick charts, please use the "Charting Tools" page.
-              </div>
+                Note: Charts above are simplified line charts with volume, showing daily and weekly perspectives. For detailed candlestick charts, please use the "Charting Tools" page.
+            </div>
               <div className="text-center">
                 <h3 className="font-semibold text-lg mb-1 text-foreground">Strategy Explanation:</h3>
                 <p className="text-muted-foreground text-sm whitespace-pre-line text-left">{strategy.strategyExplanation}</p>
@@ -452,3 +452,4 @@ export default function TradingStrategyForm() {
     </div>
   );
 }
+
