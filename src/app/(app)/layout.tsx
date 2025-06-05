@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from "react";
@@ -76,11 +75,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </Sidebar>
       <SidebarInset className="flex flex-col relative"> {/* Added relative positioning */}
         <MatrixRain /> {/* Added MatrixRain component */}
-        <header className="sticky top-0 z-20 flex h-14 items-center justify-between gap-4 border-b bg-background/80 backdrop-blur-sm px-6 md:justify-end"> {/* Increased z-index for header */}
+        <header className="sticky top-0 z-20 flex h-14 items-center justify-between gap-4 border-b bg-background/80 backdrop-blur-sm px-4 md:px-6 md:justify-end"> {/* Adjusted header padding */}
           <SidebarTrigger className="md:hidden" />
           {/* User info or search could go here in header */}
         </header>
-        <main className="flex-1 overflow-y-auto p-6 z-10 relative"> {/* Added z-index and relative for main content */}
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 z-10 relative"> {/* Responsive padding for main content */}
           {children}
         </main>
         <Footer />
