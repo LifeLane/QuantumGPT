@@ -5,20 +5,17 @@ import * as React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { BarChart3, ListChecks, Bot } from 'lucide-react';
-import MarketScroll from '@/components/features/MarketScroll';
+import { BarChart3, Bot } from 'lucide-react';
+// MarketScroll is no longer imported or used here
 
 export default function DashboardPage() {
 
   return (
+    // Main container for horizontal flow
     <div className="flex flex-row items-start h-full min-w-max py-2 space-x-6">
-      {/* MarketScroll can be a column if desired, or integrated differently */}
-      <div className="flex-shrink-0 w-full md:w-[calc(100vw-18rem)]"> {/* Example width for scroll */}
-         <MarketScroll />
-      </div>
       
       {/* Welcome Text and Feature Cards container - as a column */}
-      <div className="flex flex-col space-y-6 flex-shrink-0 w-auto">
+      <div className="flex flex-col space-y-6 flex-shrink-0"> {/* Added fixed width for stability */}
         <div>
           <h1 className="text-4xl font-headline font-semibold text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-primary animate-pulse">
             Welcome to Quantum GPT!
@@ -60,23 +57,15 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-card/70 backdrop-blur-sm border-slate-700 shadow-lg hover:shadow-primary/30 transition-all duration-300 ease-in-out hover:scale-105 flex-shrink-0 w-72">
-            <CardHeader>
-              <CardTitle className="font-headline text-xl flex items-center gap-2">
-                <ListChecks className="h-7 w-7 text-accent" />
-                My Watchlist
-              </CardTitle>
-              <CardDescription className="text-sm">Monitor your favorite cryptos and stay ahead.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button asChild variant="outline" className="w-full group border-accent text-accent hover:bg-accent hover:text-background">
-                <Link href="/watchlist">Track My Coins</Link>
-              </Button>
-            </CardContent>
-          </Card>
+          {/* "My Watchlist" card removed */}
         </div>
       </div>
+
+      {/* Other sections of the dashboard would go here, also as flex-shrink-0 columns with defined widths */}
+      {/* Example: <div className="flex-shrink-0 w-[another-fixed-width]">...content...</div> */}
 
     </div>
   );
 }
+
+    

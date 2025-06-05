@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Activity, ArrowDownRight, ArrowUpRight } from 'lucide-react'; // Using Activity as a neutral indicator
+import { Activity, ArrowDownRight, ArrowUpRight } from 'lucide-react';
 
 interface TrendingCoin {
   id: string;
@@ -10,7 +10,7 @@ interface TrendingCoin {
   symbol: string;
   price_btc: number;
   large: string;
-  market_cap_rank: number; // available in trending
+  market_cap_rank: number;
 }
 
 interface TrendingItem {
@@ -43,15 +43,12 @@ const MarketScroll: React.FC = () => {
         setBtcPriceUsd(btcPriceData.bitcoin.usd);
       } else {
         console.warn("Could not fetch BTC to USD price. USD prices for trending coins will not be available.");
-        setBtcPriceUsd(null); // Explicitly set to null if fetch fails
+        setBtcPriceUsd(null);
       }
       setError(null);
     } catch (err: any) {
       console.error("Error fetching market scroll data:", err);
       setError(err.message);
-      // Keep existing data if partial fetch failed, or clear if preferred
-      // setTrending([]); 
-      // setBtcPriceUsd(null);
     } finally {
       setLoading(false);
     }
@@ -59,21 +56,20 @@ const MarketScroll: React.FC = () => {
 
   useEffect(() => {
     fetchPrices();
-    const intervalId = setInterval(fetchPrices, 60000); // Update every 60 seconds
-
-    return () => clearInterval(intervalId); // Clean up the interval on component unmount
+    const intervalId = setInterval(fetchPrices, 60000); 
+    return () => clearInterval(intervalId);
   }, []);
 
-  if (loading && trending.length === 0) { // Show loading only on initial load
-    return <div className="text-center py-2 text-muted-foreground">Loading trending cryptocurrencies...</div>;
+  if (loading && trending.length === 0) {
+    return <div className="text-center py-1 text-xs text-muted-foreground">Loading trending...</div>;
   }
 
-  if (error && trending.length === 0) { // Show error only if no data could be loaded initially
-    return <div className="text-center py-2 text-destructive dark:text-red-400">Error: {error}</div>;
+  if (error && trending.length === 0) {
+    return <div className="text-center py-1 text-xs text-destructive dark:text-red-400">Error loading.</div>;
   }
   
   if (trending.length === 0) {
-    return <div className="text-center py-2 text-muted-foreground">No trending data available.</div>;
+    return <div className="text-center py-1 text-xs text-muted-foreground">No trending data.</div>;
   }
 
   const getPriceDisplay = (priceBtc: number) => {
@@ -84,37 +80,29 @@ const MarketScroll: React.FC = () => {
     return `${priceBtc.toFixed(8)} BTC`;
   };
   
-  // Placeholder for trend indicator. Cycle for visual effect or use static.
   const getTrendIcon = (rank: number) => {
+    // Cycle icons for visual effect as API doesn't provide live trend for this specific list
     const mod = rank % 3;
-    if (mod === 0) return <ArrowUpRight className="h-3 w-3 text-green-500 ml-1" />;
-    if (mod === 1) return <ArrowDownRight className="h-3 w-3 text-red-500 ml-1" />;
-    return <Activity className="h-3 w-3 text-gray-500 ml-1" />;
+    if (mod === 0) return <ArrowUpRight className="h-3 w-3 text-green-500 ml-0.5 shrink-0" />;
+    if (mod === 1) return <ArrowDownRight className="h-3 w-3 text-red-500 ml-0.5 shrink-0" />;
+    return <Activity className="h-3 w-3 text-gray-500 ml-0.5 shrink-0" />;
   };
 
+  const duplicatedTrending = [...trending, ...trending]; // Duplicate for seamless scroll
 
   return (
-    <div className="w-full bg-card/50 dark:bg-gray-800/50 py-2 overflow-hidden border-y border-border backdrop-blur-sm">
-      <div className="flex animate-scroll whitespace-nowrap">
-        {trending.map((item) => (
-          <div key={item.item.id} className="flex items-center px-4 py-1 mx-2 rounded-md bg-background/30 shadow-sm">
-            <img src={item.item.large} alt={item.item.name} className="w-5 h-5 mr-2 rounded-full" />
-            <span className="font-semibold text-sm text-foreground">{item.item.name}</span>
-            <span className="ml-1 text-xs text-muted-foreground">({item.item.symbol.toUpperCase()})</span>
-            <span className="ml-2 text-sm font-medium text-accent">
-              {getPriceDisplay(item.item.price_btc)}
-            </span>
-            {getTrendIcon(item.item.market_cap_rank || 0)} 
-            {/* Using market_cap_rank to vary icon for demo, API doesn't give live trend for this list */}
-          </div>
-        ))}
-        {/* Duplicate elements for seamless looping */}
-        {trending.map((item) => (
-          <div key={`${item.item.id}-duplicate`} className="flex items-center px-4 py-1 mx-2 rounded-md bg-background/30 shadow-sm" aria-hidden="true">
-            <img src={item.item.large} alt={item.item.name} className="w-5 h-5 mr-2 rounded-full" />
-            <span className="font-semibold text-sm text-foreground">{item.item.name}</span>
-            <span className="ml-1 text-xs text-muted-foreground">({item.item.symbol.toUpperCase()})</span>
-             <span className="ml-2 text-sm font-medium text-accent">
+    <div className="w-full py-1 overflow-hidden h-full flex items-center"> {/* Adjusted for header height */}
+      <div className="flex animate-scroll whitespace-nowrap h-full items-center">
+        {duplicatedTrending.map((item, index) => (
+          <div 
+            key={`${item.item.id}-${index}`} 
+            className="flex items-center px-3 py-1 mx-1.5 rounded-md bg-background/30 shadow-sm h-[calc(100%-0.25rem)]" // Slightly less height to avoid touching header borders
+            aria-hidden={index >= trending.length ? "true" : undefined}
+          >
+            <img src={item.item.large} alt={item.item.name} className="w-4 h-4 mr-1.5 rounded-full shrink-0" />
+            <span className="font-semibold text-xs text-foreground truncate max-w-[60px] sm:max-w-[80px]">{item.item.name}</span>
+            <span className="ml-1 text-[10px] text-muted-foreground hidden sm:inline">({item.item.symbol.toUpperCase()})</span>
+            <span className="ml-1.5 text-xs font-medium text-accent whitespace-nowrap">
               {getPriceDisplay(item.item.price_btc)}
             </span>
             {getTrendIcon(item.item.market_cap_rank || 0)}
@@ -124,11 +112,15 @@ const MarketScroll: React.FC = () => {
       <style jsx>{`
         @keyframes scroll {
           0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
+          100% { transform: translateX(-50%); } /* Scroll one full set of items */
         }
         .animate-scroll {
           animation: scroll linear infinite;
-          animation-duration: ${trending.length * 5}s; /* Adjust speed based on number of items, make it a bit slower */
+          animation-duration: ${trending.length * 6}s; /* Adjust speed: 6s per item */
+        }
+        /* Ensure items don't wrap if flex calculation is slightly off */
+        .animate-scroll > div {
+          flex-shrink: 0;
         }
       `}</style>
     </div>
@@ -137,3 +129,4 @@ const MarketScroll: React.FC = () => {
 
 export default MarketScroll;
 
+    
