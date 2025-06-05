@@ -23,7 +23,8 @@ const tradingStrategyFormSchema = z.object({
 
 type TradingStrategyFormValues = z.infer<typeof tradingStrategyFormSchema>;
 
-type UserSentiment = "bullish" | "neutral" | "bearish";
+type UserUISentiment = "bullish" | "neutral" | "bearish"; // Represents UI tab state
+type AISentiment = "bullish" | "bearish" | undefined; // Represents what's sent to AI
 
 declare global {
   interface Window {
@@ -35,7 +36,7 @@ export default function TradingStrategyForm() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [strategy, setStrategy] = React.useState<SuggestTradingStrategyOutput | null>(null);
   const [currentSymbolForWidget, setCurrentSymbolForWidget] = React.useState<string | null>(null);
-  const [selectedSentiment, setSelectedSentiment] = React.useState<UserSentiment>("neutral");
+  const [selectedUISentiment, setSelectedUISentiment] = React.useState<UserUISentiment>("neutral"); // Default to neutral for UI
   const { toast } = useToast();
 
   const form = useForm<TradingStrategyFormValues>({
@@ -50,9 +51,18 @@ export default function TradingStrategyForm() {
     setStrategy(null);
     setCurrentSymbolForWidget(null);
 
+    let aiSentiment: AISentiment;
+    if (selectedUISentiment === 'bullish') {
+      aiSentiment = 'bullish';
+    } else if (selectedUISentiment === 'bearish') {
+      aiSentiment = 'bearish';
+    } else { // 'neutral' in UI maps to undefined for AI (general analysis)
+      aiSentiment = undefined;
+    }
+
     const inputForAI: SuggestTradingStrategyInput = {
       cryptocurrency: data.cryptocurrency,
-      userSentiment: selectedSentiment,
+      userSentiment: aiSentiment,
     };
 
     try {
@@ -117,7 +127,7 @@ export default function TradingStrategyForm() {
           valuesTracking: "1",
           changeMode: "price-and-percent",
           chartType: "area",
-          maLineColor: "#2962FF", // A blue color, can be themed
+          maLineColor: "#2962FF", 
           maLineWidth: 1,
           maLength: 9,
           backgroundColor: "rgba(0, 0, 0, 0)", 
@@ -137,11 +147,18 @@ export default function TradingStrategyForm() {
 
   const getConfidenceColor = (level?: string) => {
     if (level === "Very Low - Risk Warning") return "text-destructive dark:text-red-400";
-    if (level === "Low") return "text-orange-500 dark:text-orange-400"; // Adjusted for visibility
-    if (level === "Medium") return "text-yellow-500 dark:text-yellow-400"; // Adjusted for visibility
-    if (level === "High") return "text-green-500 dark:text-green-400"; // Adjusted for visibility
+    if (level === "Low") return "text-orange-500 dark:text-orange-400";
+    if (level === "Medium") return "text-yellow-500 dark:text-yellow-400";
+    if (level === "High") return "text-green-500 dark:text-green-400";
     return "text-muted-foreground";
   }
+  
+  const getSentimentDisplayText = () => {
+    if (selectedUISentiment === 'bullish') return "Bullish";
+    if (selectedUISentiment === 'bearish') return "Bearish";
+    return "General Analysis (Neutral Default)"; // For "neutral" UI selection
+  };
+
 
   return (
     <div className="space-y-8">
@@ -153,7 +170,7 @@ export default function TradingStrategyForm() {
           </CardTitle>
           <CardDescription className="text-muted-foreground font-body">
             Get AI-powered trading strategy suggestions. 
-            The AI attempts to use live market data via the Messari API.
+            The AI attempts to use live market data via the Messari API. Select your market view or leave as Neutral for a general analysis.
           </CardDescription>
         </CardHeader>
         <Form {...form}>
@@ -174,14 +191,14 @@ export default function TradingStrategyForm() {
               />
               
               <FormItem>
-                <FormLabel className="text-foreground font-body">Your Market Sentiment</FormLabel>
-                <Tabs value={selectedSentiment} onValueChange={(value) => setSelectedSentiment(value as UserSentiment)} className="w-full">
+                <FormLabel className="text-foreground font-body">Your Market View (Optional - default is Neutral for General Analysis)</FormLabel>
+                <Tabs value={selectedUISentiment} onValueChange={(value) => setSelectedUISentiment(value as UserUISentiment)} className="w-full">
                   <TabsList className="grid w-full grid-cols-3 bg-muted/50">
                     <TabsTrigger value="bullish" className="flex items-center data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-md font-body">
                       <TrendingUp className="mr-1.5 h-4 w-4 text-green-500" /> Bullish
                     </TabsTrigger>
                     <TabsTrigger value="neutral" className="flex items-center data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-md font-body">
-                      <MinusCircle className="mr-1.5 h-4 w-4 text-yellow-500" /> Neutral
+                      <MinusCircle className="mr-1.5 h-4 w-4 text-yellow-500" /> Neutral / General
                     </TabsTrigger>
                     <TabsTrigger value="bearish" className="flex items-center data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-md font-body">
                       <TrendingDown className="mr-1.5 h-4 w-4 text-red-500" /> Bearish
@@ -192,7 +209,7 @@ export default function TradingStrategyForm() {
               </FormItem>
 
             </CardContent>
-            <CardFooter>
+            <CardFooter className="flex justify-center">
               <Button type="submit" disabled={isLoading} className="bg-primary hover:bg-primary/80 text-primary-foreground font-body text-base py-3 px-6 shadow-md hover:shadow-lg transition-shadow duration-300">
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Suggest Strategy
@@ -217,7 +234,7 @@ export default function TradingStrategyForm() {
                   <LineChart className="h-5 w-5 text-accent" />
                   AI Strategy for {form.getValues("cryptocurrency").toUpperCase()} 
                   <span className="text-muted-foreground font-body text-base">
-                    (Your Sentiment: {selectedSentiment.charAt(0).toUpperCase() + selectedSentiment.slice(1)})
+                     (Your View: {getSentimentDisplayText()})
                   </span>
               </CardTitle>
               <Alert variant="default" className="mt-2 bg-background/50 border-border text-sm">
@@ -274,7 +291,6 @@ export default function TradingStrategyForm() {
             </CardContent>
           </Card>
           
-          {/* TradingPredictionCard is already styled internally and is placed after this main results card */}
           <TradingPredictionCard
             prediction={{
               trade: strategy.tradePossible,
@@ -294,7 +310,7 @@ export default function TradingStrategyForm() {
         <Card className="bg-card/70 backdrop-blur-sm border-slate-700 shadow-xl">
             <CardContent className="pt-6">
                 <p className="text-center text-muted-foreground font-body">
-                    Enter a cryptocurrency symbol and select your market sentiment to get an AI-powered trading strategy.
+                    Enter a cryptocurrency symbol and select your market view (or leave as Neutral for general analysis) to get an AI-powered trading strategy.
                 </p>
             </CardContent>
         </Card>
