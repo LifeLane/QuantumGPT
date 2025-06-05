@@ -22,11 +22,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { LogoIcon } from "@/components/icons/LogoIcon";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { LayoutDashboard, Bot, ListChecks, Bell, LineChart, Info, TrendingUp, TrendingDown, MinusCircle } from "lucide-react";
+import { LayoutDashboard, Bot, ListChecks, Bell, LineChart, Info, TrendingUp, TrendingDown, MinusCircle, Loader2 } from "lucide-react";
 import MatrixRain from "@/components/effects/MatrixRain";
 import Footer from "@/components/layout/Footer";
 import MarketScroll from "@/components/features/MarketScroll";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -39,20 +40,21 @@ const navItems = [
 interface MarketGlanceCoin {
   name: string;
   symbol: string;
-  metricValue: number; 
+  metricValue: number;
 }
 interface MarketGlanceData {
   marketCap: string | null;
   marketCapChange24h: number | null;
   topVolumeCoins: MarketGlanceCoin[];
   topGainerCoins: MarketGlanceCoin[];
-  hasError?: boolean; // Flag to indicate if fetching data failed
+  hasError?: boolean;
 }
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [marketData, setMarketData] = React.useState<MarketGlanceData | null>(null);
   const [isLoadingData, setIsLoadingData] = React.useState(true);
+  const isMobile = useIsMobile();
 
   const formatMarketCap = (num: number | undefined | null): string => {
     if (num === null || num === undefined) return 'N/A';
@@ -63,6 +65,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   };
 
   React.useEffect(() => {
+    // This fetch is for "Market At A Glance" - primarily for desktop sidebar.
+    // It will still run on mobile, but the UI consuming it is hidden.
     const fetchMarketData = async () => {
       setIsLoadingData(true);
       try {
@@ -94,7 +98,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
           topGainerCoins = [...coinsData]
             .sort((a, b) => (b.price_change_percentage_24h || 0) - (a.price_change_percentage_24h || 0))
-            .filter(coin => (coin.price_change_percentage_24h || 0) > 0) 
+            .filter(coin => (coin.price_change_percentage_24h || 0) > 0)
             .slice(0, 3)
             .map(coin => ({ name: coin.name, symbol: coin.symbol.toUpperCase(), metricValue: coin.price_change_percentage_24h }));
         }
@@ -108,13 +112,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         });
 
       } catch (error) {
-        console.error("Failed to fetch market glance data:", error); // This logs the "Failed to fetch" or other errors
+        console.error("Failed to fetch market glance data:", error);
         setMarketData({ 
           marketCap: 'N/A',
           marketCapChange24h: 0,
           topVolumeCoins: [],
           topGainerCoins: [],
-          hasError: true, // Set the error flag
+          hasError: true,
         });
       } finally {
         setIsLoadingData(false);
@@ -122,7 +126,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     };
 
     fetchMarketData();
-    const intervalId = setInterval(fetchMarketData, 60000); 
+    const intervalId = setInterval(fetchMarketData, 60000);
     return () => clearInterval(intervalId);
   }, []);
 
@@ -140,6 +144,49 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return `Neutral (${marketData.marketCapChange24h.toFixed(2)}%)`;
   };
 
+  if (isMobile === undefined) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (isMobile) {
+    // Mobile View
+    return (
+      <div className="flex flex-col min-h-screen">
+        <header className="sticky top-0 z-30 flex flex-col bg-background/95 backdrop-blur-sm shadow-md">
+          {/* Logo part */}
+          <div className="flex items-center justify-center p-3 border-b border-border h-14">
+             <Link href="/dashboard" className="flex items-center gap-2">
+                <LogoIcon className="w-7 h-7 text-primary" />
+                <div className="flex flex-col">
+                  <h1 className="text-lg font-headline font-semibold text-primary">Quantum GPT</h1>
+                  <span className="text-xs text-muted-foreground -mt-1">Powered by BlockSmithAI</span>
+                </div>
+              </Link>
+          </div>
+          {/* MarketScroll part */}
+          <div className="h-10 border-b border-border">
+            <MarketScroll />
+          </div>
+        </header>
+        <MatrixRain />
+        <main className="flex-1 p-4 z-10 relative overflow-y-auto">
+          {children}
+           <div className="mt-8 mb-4 text-center">
+            <Button asChild variant="outline" className="border-accent text-accent hover:bg-accent hover:text-background">
+              <Link href="/charting">Charting Tools</Link>
+            </Button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Desktop View
   return (
     <SidebarProvider defaultOpen>
       <Sidebar>
@@ -235,7 +282,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <MatrixRain />
         <header className="sticky top-0 z-20 flex h-14 items-center justify-start gap-4 border-b bg-background/80 backdrop-blur-sm px-4 md:px-6 flex-shrink-0">
           <SidebarTrigger />
-          <div className="flex-1 overflow-hidden"> {/* Container for MarketScroll */}
+          <div className="flex-1 overflow-hidden">
             <MarketScroll />
           </div>
         </header>
@@ -249,8 +296,3 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
-    
-
-    
-
-    
