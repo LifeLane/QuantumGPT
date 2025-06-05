@@ -24,7 +24,7 @@ const tradingStrategyFormSchema = z.object({
 type TradingStrategyFormValues = z.infer<typeof tradingStrategyFormSchema>;
 
 type UserUISentiment = "bullish" | "neutral" | "bearish";
-type AISentiment = "bullish" | "bearish" | undefined; // For AI input
+type AISentiment = "bullish" | "bearish" | undefined; 
 type UserRiskTolerance = "low" | "medium" | "high";
 
 declare global {
@@ -37,7 +37,7 @@ export default function TradingStrategyForm() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [strategy, setStrategy] = React.useState<SuggestTradingStrategyOutput | null>(null);
   const [currentSymbolForWidget, setCurrentSymbolForWidget] = React.useState<string | null>(null);
-  const [selectedUISentiment, setSelectedUISentiment] = React.useState<UserUISentiment>("neutral");
+  const [selectedUISentiment, setSelectedUISentiment] = React.useState<UserUISentiment | undefined>(undefined);
   const [selectedRiskTolerance, setSelectedRiskTolerance] = React.useState<UserRiskTolerance>("medium");
   const { toast } = useToast();
 
@@ -47,6 +47,15 @@ export default function TradingStrategyForm() {
       cryptocurrency: "",
     },
   });
+
+  const handleSentimentChange = (value: string) => {
+    const newSentiment = value as UserUISentiment;
+    if (selectedUISentiment === newSentiment) {
+      setSelectedUISentiment(undefined); // Deselect if current tab is clicked again
+    } else {
+      setSelectedUISentiment(newSentiment); // Select new tab
+    }
+  };
 
   const onSubmit: SubmitHandler<TradingStrategyFormValues> = async (data) => {
     setIsLoading(true);
@@ -58,8 +67,10 @@ export default function TradingStrategyForm() {
       aiSentiment = 'bullish';
     } else if (selectedUISentiment === 'bearish') {
       aiSentiment = 'bearish';
-    } else {
-      aiSentiment = undefined; // Neutral means general analysis, no specific sentiment passed for that param
+    } else { 
+      // This covers if selectedUISentiment is 'neutral' or undefined (no tab selected)
+      // In both cases, the AI should perform a general analysis for sentiment.
+      aiSentiment = undefined;
     }
 
     const inputForAI: SuggestTradingStrategyInput = {
@@ -92,7 +103,7 @@ export default function TradingStrategyForm() {
         profitTarget: null,
         confidenceLevel: "Very Low - Risk Warning",
         riskWarnings: ["Failed to generate strategy. Please check your input or try again later."],
-        disclaimer: "An error occurred. All trading involves risk."
+        disclaimer: "QuantumGPT, powered by Blocksmith AI, was developed following extensive research in quantitative finance, market intelligence, and applied machine learning. Our models are built to deliver adaptive trading insights, deep behavioral analytics, and tailored strategies through real-time data analysis and visualization.\n\nWhile QuantumGPT provides cutting-edge analytical tools, it is not a financial advisor. Blocksmith AI assumes no liability for losses or outcomes related to the use of QuantumGPT."
       });
       toast({
         title: "Strategy Error",
@@ -173,7 +184,8 @@ export default function TradingStrategyForm() {
   const getSentimentDisplayText = () => {
     if (selectedUISentiment === 'bullish') return "Bullish";
     if (selectedUISentiment === 'bearish') return "Bearish";
-    return "Neutral / General";
+    if (selectedUISentiment === 'neutral') return "Neutral / General";
+    return "Not Specified"; // For when selectedUISentiment is undefined
   };
 
   const getRiskToleranceDisplayText = () => {
@@ -218,7 +230,11 @@ export default function TradingStrategyForm() {
               <div className="space-y-6">
                 <FormItem className="flex flex-col items-center space-y-2">
                   <FormLabel className="text-foreground font-body">Your Market View (Optional)</FormLabel>
-                  <Tabs value={selectedUISentiment} onValueChange={(value) => setSelectedUISentiment(value as UserUISentiment)} className="w-auto max-w-md">
+                  <Tabs 
+                    value={selectedUISentiment} 
+                    onValueChange={handleSentimentChange} 
+                    className="w-auto max-w-md"
+                  >
                     <TabsList className="grid w-full grid-cols-3 bg-muted/50">
                       <TabsTrigger value="bullish" className="flex items-center data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-md font-body">
                         <TrendingUp className="mr-1.5 h-4 w-4 text-green-500" /> Bullish
