@@ -22,10 +22,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { LogoIcon } from "@/components/icons/LogoIcon";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { LayoutDashboard, Bot, ListChecks, Bell, LineChart, Info, TrendingUp, TrendingDown, MinusCircle, ShoppingCart, DollarSign, Zap } from "lucide-react";
+import { LayoutDashboard, Bot, ListChecks, Bell, LineChart, Info, TrendingUp, TrendingDown, MinusCircle } from "lucide-react";
 import MatrixRain from "@/components/effects/MatrixRain";
 import Footer from "@/components/layout/Footer";
-import MarketScroll from "@/components/features/MarketScroll"; // Import MarketScroll
+import MarketScroll from "@/components/features/MarketScroll";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -79,7 +80,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
           topGainerCoins = [...coinsData]
             .sort((a, b) => (b.price_change_percentage_24h || 0) - (a.price_change_percentage_24h || 0))
-            .filter(coin => (coin.price_change_percentage_24h || 0) > 0) // Only show actual gainers
+            .filter(coin => (coin.price_change_percentage_24h || 0) > 0) 
             .slice(0, 3)
             .map(coin => ({ name: coin.name, symbol: coin.symbol.toUpperCase(), price_change_percentage_24h: coin.price_change_percentage_24h }));
         }
@@ -93,7 +94,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       } catch (error) {
         console.error("Failed to fetch market glance data:", error);
-        setMarketData({ // Fallback to simulated on error after initial attempt
+        setMarketData({ 
           marketCap: 'N/A',
           marketCapChange24h: 0,
           topVolumeCoins: [
@@ -109,7 +110,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     };
 
     fetchMarketData();
-    const intervalId = setInterval(fetchMarketData, 60000); // Refresh every 60 seconds
+    const intervalId = setInterval(fetchMarketData, 60000); 
     return () => clearInterval(intervalId);
   }, []);
 
@@ -163,41 +164,44 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </SidebarGroupLabel>
                 <SidebarGroupContent className="text-xs space-y-1 p-2 text-sidebar-foreground/90">
                   {isLoadingData ? (
-                    <>
-                      <div><p className="font-semibold">Market Cap:</p><p>Loading...</p></div>
-                      <div><p className="font-semibold">Sentiment:</p><p>Loading...</p></div>
-                      <div><p className="font-semibold">Top Volume (24h):</p><ul className="list-none pl-1"><li>Loading...</li></ul></div>
-                      <div><p className="font-semibold">Top Gainers (24h):</p><ul className="list-none pl-1"><li>Loading...</li></ul></div>
-                    </>
+                    <div className="space-y-2 p-2">
+                      <p>Loading market data...</p>
+                    </div>
                   ) : marketData ? (
-                    <>
-                      <div>
+                    <Tabs defaultValue="market_cap" className="w-full">
+                      <TabsList className="grid w-full grid-cols-2 h-auto mb-2 text-xs p-0.5">
+                        <TabsTrigger value="market_cap" className="px-1 py-0.5 text-xs h-auto">Cap</TabsTrigger>
+                        <TabsTrigger value="sentiment" className="px-1 py-0.5 text-xs h-auto">Sentiment</TabsTrigger>
+                        <TabsTrigger value="top_volume" className="px-1 py-0.5 text-xs h-auto">Volume</TabsTrigger>
+                        <TabsTrigger value="top_gainers" className="px-1 py-0.5 text-xs h-auto">Gainers</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="market_cap" className="mt-0 p-1 border rounded-md bg-sidebar-background/50">
                         <p className="font-semibold">Market Cap:</p>
                         <p>{marketData.marketCap}</p>
-                      </div>
-                      <div>
+                      </TabsContent>
+                      <TabsContent value="sentiment" className="mt-0 p-1 border rounded-md bg-sidebar-background/50">
                         <p className="font-semibold">Sentiment:</p>
                         <p className="flex items-center gap-1">{getSentimentIcon()} {getSentimentText()}</p>
-                      </div>
-                      <div>
+                      </TabsContent>
+                      <TabsContent value="top_volume" className="mt-0 p-1 border rounded-md bg-sidebar-background/50">
                         <p className="font-semibold">Top Volume (24h):</p>
                         <ul className="list-none pl-1">
                           {marketData.topVolumeCoins.length > 0 ? marketData.topVolumeCoins.map((coin, index) => (
                             <li key={`vol-${index}`}>{index + 1}. {coin.symbol} ({formatMarketCap(coin.total_volume)})</li>
                           )) : <li>N/A</li>}
                         </ul>
-                      </div>
-                      <div>
+                      </TabsContent>
+                      <TabsContent value="top_gainers" className="mt-0 p-1 border rounded-md bg-sidebar-background/50">
                         <p className="font-semibold">Top Gainers (24h):</p>
                         <ul className="list-none pl-1">
                           {marketData.topGainerCoins.length > 0 ? marketData.topGainerCoins.map((coin, index) => (
                             <li key={`gain-${index}`}>{index + 1}. {coin.symbol} (+{coin.price_change_percentage_24h.toFixed(2)}%)</li>
                           )) : <li>N/A</li>}
                         </ul>
-                      </div>
-                    </>
+                      </TabsContent>
+                    </Tabs>
                   ) : (
-                     <div><p className="font-semibold text-destructive">Error loading market data.</p></div>
+                     <div className="p-2"><p className="font-semibold text-destructive">Error loading market data.</p></div>
                   )}
                 </SidebarGroupContent>
               </SidebarGroup>
@@ -228,5 +232,4 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
-
     
