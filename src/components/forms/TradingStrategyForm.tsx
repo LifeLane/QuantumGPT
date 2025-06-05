@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { suggestTradingStrategy, type SuggestTradingStrategyInput, type SuggestTradingStrategyOutput } from "@/ai/flows/ai-trading-strategy-suggestion";
-import { Loader2, Lightbulb, LineChart, AlertTriangle, TrendingUp, TrendingDown, MinusCircle } from "lucide-react";
+import { Loader2, Lightbulb, LineChart, AlertTriangle, TrendingUp, TrendingDown, MinusCircle, ShieldQuestion, ShieldAlert, ShieldCheck, ShieldHalf } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import TradingPredictionCard from "@/components/features/TradingPredictionCard";
@@ -23,8 +23,9 @@ const tradingStrategyFormSchema = z.object({
 
 type TradingStrategyFormValues = z.infer<typeof tradingStrategyFormSchema>;
 
-type UserUISentiment = "bullish" | "neutral" | "bearish"; // Represents UI tab state
-type AISentiment = "bullish" | "bearish" | undefined; // Represents what's sent to AI
+type UserUISentiment = "bullish" | "neutral" | "bearish"; 
+type AISentiment = "bullish" | "bearish" | undefined; 
+type UserRiskTolerance = "low" | "medium" | "high";
 
 declare global {
   interface Window {
@@ -36,7 +37,8 @@ export default function TradingStrategyForm() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [strategy, setStrategy] = React.useState<SuggestTradingStrategyOutput | null>(null);
   const [currentSymbolForWidget, setCurrentSymbolForWidget] = React.useState<string | null>(null);
-  const [selectedUISentiment, setSelectedUISentiment] = React.useState<UserUISentiment>("neutral"); // Default to neutral for UI
+  const [selectedUISentiment, setSelectedUISentiment] = React.useState<UserUISentiment>("neutral"); 
+  const [selectedRiskTolerance, setSelectedRiskTolerance] = React.useState<UserRiskTolerance>("medium");
   const { toast } = useToast();
 
   const form = useForm<TradingStrategyFormValues>({
@@ -56,13 +58,14 @@ export default function TradingStrategyForm() {
       aiSentiment = 'bullish';
     } else if (selectedUISentiment === 'bearish') {
       aiSentiment = 'bearish';
-    } else { // 'neutral' in UI maps to undefined for AI (general analysis)
+    } else { 
       aiSentiment = undefined;
     }
 
     const inputForAI: SuggestTradingStrategyInput = {
       cryptocurrency: data.cryptocurrency,
       userSentiment: aiSentiment,
+      riskTolerance: selectedRiskTolerance,
     };
 
     try {
@@ -156,7 +159,14 @@ export default function TradingStrategyForm() {
   const getSentimentDisplayText = () => {
     if (selectedUISentiment === 'bullish') return "Bullish";
     if (selectedUISentiment === 'bearish') return "Bearish";
-    return "General Analysis (Neutral Default)"; // For "neutral" UI selection
+    return "Neutral / General"; 
+  };
+
+  const getRiskToleranceDisplayText = () => {
+    if (selectedRiskTolerance === 'low') return "Low Risk";
+    if (selectedRiskTolerance === 'medium') return "Medium Risk";
+    if (selectedRiskTolerance === 'high') return "High Risk";
+    return "Medium Risk"; // Default
   };
 
 
@@ -170,7 +180,8 @@ export default function TradingStrategyForm() {
           </CardTitle>
           <CardDescription className="text-muted-foreground font-body">
             Get AI-powered trading strategy suggestions. 
-            The AI attempts to use live market data via the Messari API. Select your market view or leave as Neutral for a general analysis.
+            The AI attempts to use live market data via the Messari API. 
+            Select your market view (optional) and risk tolerance.
           </CardDescription>
         </CardHeader>
         <Form {...form}>
@@ -190,26 +201,46 @@ export default function TradingStrategyForm() {
                 )}
               />
               
-              <FormItem>
-                <FormLabel className="text-foreground font-body">Your Market View (Optional - default is Neutral for General Analysis)</FormLabel>
-                <Tabs value={selectedUISentiment} onValueChange={(value) => setSelectedUISentiment(value as UserUISentiment)} className="w-full">
-                  <TabsList className="grid w-full grid-cols-3 bg-muted/50">
-                    <TabsTrigger value="bullish" className="flex items-center data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-md font-body">
-                      <TrendingUp className="mr-1.5 h-4 w-4 text-green-500" /> Bullish
-                    </TabsTrigger>
-                    <TabsTrigger value="neutral" className="flex items-center data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-md font-body">
-                      <MinusCircle className="mr-1.5 h-4 w-4 text-yellow-500" /> Neutral / General
-                    </TabsTrigger>
-                    <TabsTrigger value="bearish" className="flex items-center data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-md font-body">
-                      <TrendingDown className="mr-1.5 h-4 w-4 text-red-500" /> Bearish
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-                 <FormMessage />
-              </FormItem>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormItem>
+                  <FormLabel className="text-foreground font-body">Your Market View (Optional)</FormLabel>
+                  <Tabs value={selectedUISentiment} onValueChange={(value) => setSelectedUISentiment(value as UserUISentiment)} className="w-full">
+                    <TabsList className="grid w-full grid-cols-3 bg-muted/50">
+                      <TabsTrigger value="bullish" className="flex items-center data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-md font-body">
+                        <TrendingUp className="mr-1.5 h-4 w-4 text-green-500" /> Bullish
+                      </TabsTrigger>
+                      <TabsTrigger value="neutral" className="flex items-center data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-md font-body">
+                        <MinusCircle className="mr-1.5 h-4 w-4 text-yellow-500" /> Neutral / General
+                      </TabsTrigger>
+                      <TabsTrigger value="bearish" className="flex items-center data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-md font-body">
+                        <TrendingDown className="mr-1.5 h-4 w-4 text-red-500" /> Bearish
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                  <FormMessage />
+                </FormItem>
+
+                <FormItem>
+                  <FormLabel className="text-foreground font-body">Your Risk Tolerance</FormLabel>
+                  <Tabs value={selectedRiskTolerance} onValueChange={(value) => setSelectedRiskTolerance(value as UserRiskTolerance)} className="w-full">
+                    <TabsList className="grid w-full grid-cols-3 bg-muted/50">
+                      <TabsTrigger value="low" className="flex items-center data-[state=active]:bg-accent/20 data-[state=active]:text-accent data-[state=active]:shadow-md font-body">
+                        <ShieldCheck className="mr-1.5 h-4 w-4 text-green-600" /> Low
+                      </TabsTrigger>
+                      <TabsTrigger value="medium" className="flex items-center data-[state=active]:bg-accent/20 data-[state=active]:text-accent data-[state=active]:shadow-md font-body">
+                        <ShieldHalf className="mr-1.5 h-4 w-4 text-yellow-600" /> Medium
+                      </TabsTrigger>
+                      <TabsTrigger value="high" className="flex items-center data-[state=active]:bg-accent/20 data-[state=active]:text-accent data-[state=active]:shadow-md font-body">
+                        <ShieldAlert className="mr-1.5 h-4 w-4 text-red-600" /> High
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                  <FormMessage />
+                </FormItem>
+              </div>
 
             </CardContent>
-            <CardFooter className="flex justify-center">
+            <CardFooter className="flex justify-center pt-4">
               <Button type="submit" disabled={isLoading} className="bg-primary hover:bg-primary/80 text-primary-foreground font-body text-base py-3 px-6 shadow-md hover:shadow-lg transition-shadow duration-300">
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Suggest Strategy
@@ -233,16 +264,18 @@ export default function TradingStrategyForm() {
               <CardTitle className="font-headline text-xl flex items-center gap-2 text-foreground">
                   <LineChart className="h-5 w-5 text-accent" />
                   AI Strategy for {form.getValues("cryptocurrency").toUpperCase()} 
-                  <span className="text-muted-foreground font-body text-base">
-                     (Your View: {getSentimentDisplayText()})
-                  </span>
               </CardTitle>
+              <div className="text-sm text-muted-foreground font-body">
+                Analysis based on: 
+                Market View: <span className="font-semibold text-foreground">{getSentimentDisplayText()}</span> | 
+                Risk Tolerance: <span className="font-semibold text-foreground">{getRiskToleranceDisplayText()}</span>
+              </div>
               <Alert variant="default" className="mt-2 bg-background/50 border-border text-sm">
                 <AlertTitle className="font-semibold font-body text-foreground">Live Data Notice & Disclaimer</AlertTitle>
                 <AlertDescription className="text-muted-foreground font-body">
                   The "Fetched Current Price" is attempted to be sourced live via the Messari API. 
                   If live data is unavailable, it may show N/A.
-                  All other figures and the strategy explanation are AI-generated illustrative examples based on this price and simulated chart analysis, considering your stated market sentiment. 
+                  All other figures and the strategy explanation are AI-generated illustrative examples based on this price and simulated chart analysis, considering your stated market sentiment and risk tolerance. 
                   This is NOT financial advice. Always do your own research and consult a financial advisor. Trading involves substantial risk of loss.
                 </AlertDescription>
               </Alert>
@@ -310,7 +343,7 @@ export default function TradingStrategyForm() {
         <Card className="bg-card/70 backdrop-blur-sm border-slate-700 shadow-xl">
             <CardContent className="pt-6">
                 <p className="text-center text-muted-foreground font-body">
-                    Enter a cryptocurrency symbol and select your market view (or leave as Neutral for general analysis) to get an AI-powered trading strategy.
+                    Enter a cryptocurrency symbol, select your market view (optional), and define your risk tolerance to get an AI-powered trading strategy.
                 </p>
             </CardContent>
         </Card>
@@ -318,3 +351,4 @@ export default function TradingStrategyForm() {
     </div>
   );
 }
+
