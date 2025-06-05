@@ -1,3 +1,4 @@
+
 'use client';
 
 import TradingStrategyForm from "@/components/forms/TradingStrategyForm";
@@ -9,8 +10,8 @@ export default function StrategyPage() {
       {/* Or use flex-1 if it's the only/main expanding item */}
       <div className="flex items-center justify-between space-y-2">
         <div>
-          <h2 className="text-3xl font-headline font-bold tracking-tight">AI Trading Strategy</h2>
-          <p className="text-muted-foreground">
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-headline font-bold tracking-tight">AI Trading Strategy</h2>
+          <p className="text-sm sm:text-base text-muted-foreground">
             Get personalized, AI-driven trading strategy suggestions.
           </p>
         </div>

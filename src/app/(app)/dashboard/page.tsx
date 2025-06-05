@@ -17,10 +17,10 @@ export default function DashboardPage() {
       {/* Welcome Text and Feature Cards container - as a column */}
       <div className="flex flex-col space-y-6 flex-shrink-0"> {/* Added fixed width for stability */}
         <div>
-          <h1 className="text-4xl font-headline font-semibold text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-primary animate-pulse">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-headline font-semibold text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-primary animate-pulse">
             Welcome to Quantum GPT!
           </h1>
-          <p className="text-lg text-muted-foreground mt-1">
+          <p className="text-base sm:text-lg text-muted-foreground mt-1">
             Your AI-powered companion for navigating the crypto markets.
           </p>
         </div>
@@ -29,7 +29,7 @@ export default function DashboardPage() {
         <div className="flex flex-row space-x-6">
           <Card className="bg-card/70 backdrop-blur-sm border-slate-700 shadow-lg hover:shadow-primary/30 transition-all duration-300 ease-in-out hover:scale-105 flex-shrink-0 w-72">
             <CardHeader>
-              <CardTitle className="font-headline text-xl flex items-center gap-2">
+              <CardTitle className="font-headline text-lg md:text-xl flex items-center gap-2">
                 <Bot className="h-7 w-7 text-accent" />
                 AI Trading Strategy
               </CardTitle>
@@ -44,7 +44,7 @@ export default function DashboardPage() {
 
           <Card className="bg-card/70 backdrop-blur-sm border-slate-700 shadow-lg hover:shadow-primary/30 transition-all duration-300 ease-in-out hover:scale-105 flex-shrink-0 w-72">
             <CardHeader>
-              <CardTitle className="font-headline text-xl flex items-center gap-2">
+              <CardTitle className="font-headline text-lg md:text-xl flex items-center gap-2">
                 <BarChart3 className="h-7 w-7 text-accent" />
                 Advanced Market Analytics
               </CardTitle>
