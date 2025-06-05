@@ -145,25 +145,14 @@ export default function TradingStrategyForm() {
         dateRanges: ["1d", "1w", "1m", "3m", "1y", "all"],
       };
 
-      const widgetContainerId1 = `tradingview-chart1-${currentSymbolForWidget.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
-      const container1 = document.getElementById(widgetContainerId1);
-      if (container1) {
-        container1.innerHTML = '';
+      const widgetContainerId = `tradingview-chart-${currentSymbolForWidget.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+      const container = document.getElementById(widgetContainerId);
+      if (container) {
+        container.innerHTML = ''; // Clear previous widget
         new window.TradingView.MediumWidget({
           ...commonConfig,
-          symbols: [[`${currentSymbolForWidget.toUpperCase()}|1D`]], 
-          container_id: widgetContainerId1,
-        });
-      }
-
-      const widgetContainerId2 = `tradingview-chart2-${currentSymbolForWidget.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
-      const container2 = document.getElementById(widgetContainerId2);
-      if (container2) {
-        container2.innerHTML = '';
-        new window.TradingView.MediumWidget({
-          ...commonConfig,
-          symbols: [[`${currentSymbolForWidget.toUpperCase()}|1W`]], 
-          container_id: widgetContainerId2,
+          symbols: [[`${currentSymbolForWidget.toUpperCase()}|1D`]], // Default to 1D view
+          container_id: widgetContainerId,
         });
       }
     }
@@ -197,7 +186,6 @@ export default function TradingStrategyForm() {
 
 
   return (
-    // Root div no longer has fixed width or page-level padding
     <div className="space-y-6"> 
       <Card className="bg-card/70 backdrop-blur-sm border-slate-700 shadow-xl">
         <CardHeader className="text-center">
@@ -309,16 +297,11 @@ export default function TradingStrategyForm() {
             </Alert>
           </CardHeader>
           <CardContent className="space-y-6 font-body">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="h-[300px] md:h-[350px] rounded-md overflow-hidden shadow-inner bg-background/30 flex flex-col items-center justify-center">
-                <Skeleton id={`tradingview-chart1-${(currentCryptoInput || "default").toLowerCase().replace(/[^a-z0-9]/g, '')}`} className="w-full h-full flex items-center justify-center text-muted-foreground">Daily View: Awaiting Symbol</Skeleton>
-              </div>
-              <div className="h-[300px] md:h-[350px] rounded-md overflow-hidden shadow-inner bg-background/30 flex flex-col items-center justify-center">
-                 <Skeleton id={`tradingview-chart2-${(currentCryptoInput || "default").toLowerCase().replace(/[^a-z0-9]/g, '')}`} className="w-full h-full flex items-center justify-center text-muted-foreground">Weekly View: Awaiting Symbol</Skeleton>
-              </div>
+            <div className="h-[400px] rounded-md overflow-hidden shadow-inner bg-background/30 flex flex-col items-center justify-center">
+                 <Skeleton id={`tradingview-chart-${(currentCryptoInput || "default").toLowerCase().replace(/[^a-z0-9]/g, '')}`} className="w-full h-full flex items-center justify-center text-muted-foreground">Price Chart: Awaiting Symbol</Skeleton>
             </div>
              <div className="text-sm text-muted-foreground text-center italic">
-                Note: Charts above are simplified line charts with volume, showing daily and weekly perspectives. For detailed candlestick charts, please use the "Charting Tools" page.
+                Note: Chart above is a simplified line chart with volume. It defaults to a daily view, but you can use its controls to select other timeframes. For detailed candlestick charts, please use the "Charting Tools" page.
             </div>
             <div className="text-center">
               <h3 className="font-semibold text-lg mb-1 text-foreground">Strategy Explanation:</h3>
@@ -383,19 +366,12 @@ export default function TradingStrategyForm() {
             </CardHeader>
             <CardContent className="space-y-6 font-body">
               {currentSymbolForWidget && (
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="h-[300px] md:h-[350px] rounded-md overflow-hidden shadow-inner bg-background/30">
-                        <div id={`tradingview-chart1-${currentSymbolForWidget.toLowerCase().replace(/[^a-z0-9]/g, '')}`} className="w-full h-full"/>
-                        <p className="text-xs text-center text-muted-foreground -mt-4 pb-1">Daily View</p>
-                    </div>
-                    <div className="h-[300px] md:h-[350px] rounded-md overflow-hidden shadow-inner bg-background/30">
-                        <div id={`tradingview-chart2-${currentSymbolForWidget.toLowerCase().replace(/[^a-z0-9]/g, '')}`} className="w-full h-full"/>
-                        <p className="text-xs text-center text-muted-foreground -mt-4 pb-1">Weekly View</p>
-                    </div>
+                  <div className="h-[400px] rounded-md overflow-hidden shadow-inner bg-background/30">
+                      <div id={`tradingview-chart-${currentSymbolForWidget.toLowerCase().replace(/[^a-z0-9]/g, '')}`} className="w-full h-full"/>
                   </div>
               )}
                <div className="text-sm text-muted-foreground text-center italic">
-                Note: Charts above are simplified line charts with volume, showing daily and weekly perspectives. For detailed candlestick charts, please use the "Charting Tools" page.
+                 Note: Chart above is a simplified line chart with volume. It defaults to a daily view, but you can use its controls to select other timeframes. For detailed candlestick charts, please use the "Charting Tools" page.
             </div>
               <div className="text-center">
                 <h3 className="font-semibold text-lg mb-1 text-foreground">Strategy Explanation:</h3>
@@ -453,3 +429,4 @@ export default function TradingStrategyForm() {
     </div>
   );
 }
+
