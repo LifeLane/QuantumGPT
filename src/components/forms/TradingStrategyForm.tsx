@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { suggestTradingStrategy, type SuggestTradingStrategyInput, type SuggestTradingStrategyOutput } from "@/ai/flows/ai-trading-strategy-suggestion";
-import { Loader2, Lightbulb, LineChart } from "lucide-react";
+import { Loader2, Lightbulb, LineChart, AlertTriangle } from "lucide-react"; // Added AlertTriangle
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import TradingPredictionCard from "@/components/features/TradingPredictionCard";
@@ -51,7 +51,9 @@ export default function TradingStrategyForm() {
     try {
       const output = await suggestTradingStrategy(data);
       setStrategy(output);
-      setCurrentSymbolForWidget(data.cryptocurrency); 
+      if (output.tradePossible || output.currentPrice !== null) { // Show widget if trade possible or price was fetched
+        setCurrentSymbolForWidget(data.cryptocurrency); 
+      }
       toast({
         title: "Strategy Suggested",
         description: `AI has generated a trading strategy for ${data.cryptocurrency}.`,
@@ -59,7 +61,7 @@ export default function TradingStrategyForm() {
     } catch (error) {
       console.error("Trading Strategy error:", error);
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred. Please try again.";
-      setStrategy({ // Set a default error strategy to display info
+      setStrategy({ 
         tradePossible: false,
         suggestedPosition: "None",
         strategyExplanation: `Error generating strategy: ${errorMessage}`,
@@ -68,7 +70,9 @@ export default function TradingStrategyForm() {
         exitPoint: null,
         stopLossLevel: null,
         profitTarget: null,
-        disclaimer: "Failed to generate strategy. Please check your input or try again later."
+        confidenceLevel: "Very Low - Risk Warning",
+        riskWarnings: ["Failed to generate strategy. Please check your input or try again later."],
+        disclaimer: "An error occurred. All trading involves risk."
       });
       toast({
         title: "Strategy Error",
@@ -81,13 +85,13 @@ export default function TradingStrategyForm() {
   };
 
   React.useEffect(() => {
-    if (currentSymbolForWidget && window.TradingView) {
-      const widgetContainerId = `tradingview-symbol-overview-${currentSymbolForWidget.toLowerCase()}`;
+    if (currentSymbolForWidget && window.TradingView && typeof window.TradingView.MediumWidget === 'function') {
+      const widgetContainerId = `tradingview-symbol-overview-${currentSymbolForWidget.toLowerCase().replace(/[^a-z0-9]/g, '')}`; // Sanitize ID
       const container = document.getElementById(widgetContainerId);
       if (container) { 
-        container.innerHTML = ''; // Clear previous widget before loading new one
+        container.innerHTML = ''; 
         new window.TradingView.MediumWidget({
-          symbols: [[`${currentSymbolForWidget.toUpperCase()}USD|1D`]], 
+          symbols: [[`${currentSymbolForWidget.toUpperCase()}|1D`]], // TradingView often prefers uppercase and might not need exchange prefix for general symbols
           chartOnly: false,
           width: "100%",
           height: 300,
@@ -124,6 +128,14 @@ export default function TradingStrategyForm() {
     return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: price < 1 ? 8 : 4 });
   };
 
+  const getConfidenceColor = (level?: string) => {
+    if (level === "Very Low - Risk Warning") return "text-destructive dark:text-red-400";
+    if (level === "Low") return "text-orange-600 dark:text-orange-400";
+    if (level === "Medium") return "text-yellow-600 dark:text-yellow-400";
+    if (level === "High") return "text-green-600 dark:text-green-400";
+    return "text-muted-foreground";
+  }
+
   return (
     <div className="space-y-8">
       <Card className="shadow-xl border-primary/20">
@@ -134,7 +146,7 @@ export default function TradingStrategyForm() {
           </CardTitle>
           <CardDescription>
             Get AI-powered trading strategy suggestions. 
-            The AI attempts to use live market data via the Messari API (powered by CoinDesk).
+            The AI attempts to use live market data via the Messari API.
           </CardDescription>
         </CardHeader>
         <Form {...form}>
@@ -195,39 +207,29 @@ export default function TradingStrategyForm() {
 
       {strategy && !isLoading && (
         <>
-          <TradingPredictionCard
-            prediction={{
-              trade: strategy.tradePossible,
-              position: strategy.suggestedPosition || "None",
-              entryPrice: strategy.entryPoint,
-              exitPrice: strategy.exitPoint,
-              stopLoss: strategy.stopLossLevel,
-              takeProfit: strategy.profitTarget,
-            }}
-          />
           <Card className="shadow-lg mt-6">
             <CardHeader>
               <CardTitle className="font-headline text-xl flex items-center gap-2">
                   <LineChart className="h-5 w-5 text-accent" />
                   AI Strategy for {form.getValues("cryptocurrency").toUpperCase()}
               </CardTitle>
-              <Alert variant="default" className="mt-2 bg-secondary/50">
+              <Alert variant="default" className="mt-2 bg-secondary/50 border-border">
                 <AlertTitle className="font-semibold">Live Data Notice & Disclaimer</AlertTitle>
                 <AlertDescription>
                   The "Fetched Current Price" is attempted to be sourced live via the Messari API. 
-                  If live data is unavailable or an API error occurs, it may show N/A.
-                  All other figures (entry, exit, stop-loss, targets) and the strategy explanation are AI-generated illustrative examples based on this price and general chart analysis principles. 
-                  This is NOT financial advice. Always do your own research and consult a financial advisor.
+                  If live data is unavailable, it may show N/A.
+                  All other figures and the strategy explanation are AI-generated illustrative examples based on this price and simulated chart analysis. 
+                  This is NOT financial advice. Always do your own research and consult a financial advisor. Trading involves substantial risk of loss.
                 </AlertDescription>
               </Alert>
             </CardHeader>
             <CardContent className="space-y-6">
               {currentSymbolForWidget && (
-                  <div id={`tradingview-symbol-overview-${currentSymbolForWidget.toLowerCase()}`} className="w-full h-[300px] rounded-md overflow-hidden shadow-inner bg-card"/>
+                  <div id={`tradingview-symbol-overview-${currentSymbolForWidget.toLowerCase().replace(/[^a-z0-9]/g, '')}`} className="w-full h-[300px] rounded-md overflow-hidden shadow-inner bg-card"/>
               )}
               <div>
                 <h3 className="font-semibold text-lg mb-1">Strategy Explanation:</h3>
-                <p className="text-muted-foreground text-sm">{strategy.strategyExplanation}</p>
+                <p className="text-muted-foreground text-sm whitespace-pre-line">{strategy.strategyExplanation}</p>
               </div>
               
               <Separator />
@@ -237,32 +239,24 @@ export default function TradingStrategyForm() {
                   <h4 className="font-medium text-primary">Fetched Current Price:</h4>
                   <p className="text-2xl font-bold">{strategy.currentPrice !== undefined && strategy.currentPrice !== null ? `$${formatPrice(strategy.currentPrice)}` : 'N/A'}</p>
                 </div>
-                {strategy.tradePossible && strategy.suggestedPosition !== "None" && (
-                  <>
-                    <div>
-                      <h4 className="font-medium">Suggested Entry Point:</h4>
-                      <p className="text-lg">${formatPrice(strategy.entryPoint)}</p>
-                    </div>
-                    <div>
-                      <h4 className="font-medium">Suggested Exit Point:</h4>
-                      <p className="text-lg">${formatPrice(strategy.exitPoint)}</p>
-                    </div>
-                    <div>
-                      <h4 className="font-medium">Suggested Stop-Loss:</h4>
-                      <p className="text-lg">${formatPrice(strategy.stopLossLevel)}</p>
-                    </div>
-                    <div>
-                      <h4 className="font-medium">Suggested Profit Target:</h4>
-                      <p className="text-lg">${formatPrice(strategy.profitTarget)}</p>
-                    </div>
-                  </>
-                )}
-                {!strategy.tradePossible && (
-                    <div className="md:col-span-2">
-                        <p className="text-muted-foreground">No specific trade parameters suggested as no trade is currently viable according to the AI.</p>
-                    </div>
+                {strategy.confidenceLevel && (
+                  <div>
+                     <h4 className="font-medium">AI Confidence Level:</h4>
+                     <p className={`text-lg font-semibold ${getConfidenceColor(strategy.confidenceLevel)}`}>{strategy.confidenceLevel}</p>
+                  </div>
                 )}
               </div>
+
+              {strategy.riskWarnings && strategy.riskWarnings.length > 0 && (
+                <div>
+                  <h4 className="font-medium text-destructive flex items-center gap-2"><AlertTriangle className="h-5 w-5" /> Risk Warnings:</h4>
+                  <ul className="list-disc list-inside text-sm text-destructive/90 dark:text-red-400/90 space-y-1 mt-1">
+                    {strategy.riskWarnings.map((warning, index) => (
+                      <li key={index}>{warning}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               
               <Separator />
               
@@ -272,6 +266,20 @@ export default function TradingStrategyForm() {
               </div>
             </CardContent>
           </Card>
+          
+          {/* TradingPredictionCard moved to the bottom */}
+          <TradingPredictionCard
+            prediction={{
+              trade: strategy.tradePossible,
+              position: strategy.suggestedPosition || "None",
+              entryPrice: strategy.entryPoint,
+              exitPrice: strategy.exitPoint,
+              stopLoss: strategy.stopLossLevel,
+              takeProfit: strategy.profitTarget,
+              confidenceLevel: strategy.confidenceLevel,
+              riskWarnings: strategy.riskWarnings,
+            }}
+          />
         </>
       )}
 
