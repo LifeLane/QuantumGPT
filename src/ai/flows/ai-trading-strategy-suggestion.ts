@@ -33,7 +33,7 @@ const SuggestTradingStrategyOutputSchema = z.object({
   confidenceLevel: z.enum(['High', 'Medium', 'Low', 'Very Low - Risk Warning']).optional().describe("The AI's confidence in this strategy. Set to 'Very Low - Risk Warning' if significant risks like potential rugpull indicators are identified."),
   riskWarnings: z.array(z.string()).optional().describe("Specific risk warnings identified by the AI, such as potential rugpull indicators (e.g., extreme unusual price/volume activity without clear cause, suspicious project characteristics based on general knowledge if applicable), high volatility, or poor liquidity signals from the provided data."),
   disclaimer: z.string().describe(
-      "QuantumGPT, powered by Blocksmith AI, was developed following extensive research in quantitative finance, market intelligence, and applied machine learning. Our models are built to deliver adaptive trading insights, deep behavioral analytics, and tailored strategies through real-time data analysis and visualization.\n\nWhile QuantumGPT provides cutting-edge analytical tools, it is not a financial advisor. Blocksmith AI assumes no liability for losses or outcomes related to the use of QuantumGPT."
+      "QuantumGPT, powered by Blocksmith AI, was developed following extensive research in quantitative finance, market intelligence, and applied machine learning. Our models are built to deliver adaptive trading insights, deep behavioral analytics, and tailored strategies through real-time data analysis and visualization.\n\nWhile QuantumGPT provides cutting-edge analytical tools, it is not a financial advisor. All outputs are for educational and informational purposes only. Trading and investing carry risks, and decisions should be made with careful due diligence and consideration of your financial situation. Blocksmith AI assumes no liability for losses or outcomes related to the use of QuantumGPT."
     ),
 });
 export type SuggestTradingStrategyOutput = z.infer<typeof SuggestTradingStrategyOutputSchema>;
@@ -104,7 +104,7 @@ Output Field Instructions:
 -   **entryPoint, exitPoint, stopLossLevel, profitTarget**: Illustrative. If \`tradePossible\` is \`false\`, these MUST all be \`null\`. Price points should be influenced by risk tolerance.
 -   **confidenceLevel**: "High", "Medium", "Low", or "Very Low - Risk Warning".
 -   **riskWarnings**: Array of strings for specific warnings. Can be empty.
--   **disclaimer**: Standard financial disclaimer as defined in the output schema.
+-   **disclaimer**: Standard financial disclaimer as defined in the output schema. You must use the exact text from the schema description for this field.
 
 Present your response strictly in the JSON format defined by the output schema.
 `,
@@ -132,6 +132,8 @@ const suggestTradingStrategyFlow = ai.defineFlow(
         marketData: marketData,
     });
     
+    const defaultDisclaimer = "QuantumGPT, powered by Blocksmith AI, was developed following extensive research in quantitative finance, market intelligence, and applied machine learning. Our models are built to deliver adaptive trading insights, deep behavioral analytics, and tailored strategies through real-time data analysis and visualization.\n\nWhile QuantumGPT provides cutting-edge analytical tools, it is not a financial advisor. All outputs are for educational and informational purposes only. Trading and investing carry risks, and decisions should be made with careful due diligence and consideration of your financial situation. Blocksmith AI assumes no liability for losses or outcomes related to the use of QuantumGPT.";
+
     if (!output) {
         console.error("[AIStrategyFlow] AI model did not return an output. Constructing default error response.");
         return {
@@ -145,7 +147,7 @@ const suggestTradingStrategyFlow = ai.defineFlow(
             profitTarget: null,
             confidenceLevel: "Very Low - Risk Warning",
             riskWarnings: ["AI model processing error."],
-            disclaimer: "QuantumGPT, powered by Blocksmith AI, was developed following extensive research in quantitative finance, market intelligence, and applied machine learning. Our models are built to deliver adaptive trading insights, deep behavioral analytics, and tailored strategies through real-time data analysis and visualization.\n\nWhile QuantumGPT provides cutting-edge analytical tools, it is not a financial advisor. Blocksmith AI assumes no liability for losses or outcomes related to the use of QuantumGPT.",
+            disclaimer: defaultDisclaimer,
         };
     }
     
@@ -156,6 +158,7 @@ const suggestTradingStrategyFlow = ai.defineFlow(
         currentPrice: marketData?.price ?? null, 
         confidenceLevel: output.confidenceLevel || (output.tradePossible ? "Medium" : "Very Low - Risk Warning"),
         riskWarnings: output.riskWarnings || [],
+        disclaimer: output.disclaimer || defaultDisclaimer, // Ensure disclaimer is always set
     };
 
     if (!marketData || marketData.price === null || marketData.price === undefined) {
@@ -183,6 +186,8 @@ const suggestTradingStrategyFlow = ai.defineFlow(
             finalOutput.riskWarnings.push("AI determined no viable trade based on current data and risk assessment.");
         }
     }
+    // Ensure the final disclaimer is always the updated one.
+    finalOutput.disclaimer = defaultDisclaimer;
 
     return finalOutput;
   }

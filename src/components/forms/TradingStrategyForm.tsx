@@ -103,7 +103,7 @@ export default function TradingStrategyForm() {
         profitTarget: null,
         confidenceLevel: "Very Low - Risk Warning",
         riskWarnings: ["Failed to generate strategy. Please check your input or try again later."],
-        disclaimer: "QuantumGPT, powered by Blocksmith AI, was developed following extensive research in quantitative finance, market intelligence, and applied machine learning. Our models are built to deliver adaptive trading insights, deep behavioral analytics, and tailored strategies through real-time data analysis and visualization.\n\nWhile QuantumGPT provides cutting-edge analytical tools, it is not a financial advisor. Blocksmith AI assumes no liability for losses or outcomes related to the use of QuantumGPT."
+        disclaimer: "QuantumGPT, powered by Blocksmith AI, was developed following extensive research in quantitative finance, market intelligence, and applied machine learning. Our models are built to deliver adaptive trading insights, deep behavioral analytics, and tailored strategies through real-time data analysis and visualization.\n\nWhile QuantumGPT provides cutting-edge analytical tools, it is not a financial advisor. All outputs are for educational and informational purposes only. Trading and investing carry risks, and decisions should be made with careful due diligence and consideration of your financial situation. Blocksmith AI assumes no liability for losses or outcomes related to the use of QuantumGPT."
       });
       toast({
         title: "Strategy Error",
@@ -151,7 +151,7 @@ export default function TradingStrategyForm() {
         container1.innerHTML = '';
         new window.TradingView.MediumWidget({
           ...commonConfig,
-          symbols: [[`${currentSymbolForWidget.toUpperCase()}|1D`]], // Daily interval
+          symbols: [[`${currentSymbolForWidget.toUpperCase()}|1D`]], 
           container_id: widgetContainerId1,
         });
       }
@@ -162,7 +162,7 @@ export default function TradingStrategyForm() {
         container2.innerHTML = '';
         new window.TradingView.MediumWidget({
           ...commonConfig,
-          symbols: [[`${currentSymbolForWidget.toUpperCase()}|1W`]], // Weekly interval
+          symbols: [[`${currentSymbolForWidget.toUpperCase()}|1W`]], 
           container_id: widgetContainerId2,
         });
       }
@@ -340,11 +340,11 @@ export default function TradingStrategyForm() {
                 <p className="text-muted-foreground text-sm mt-1">Warnings (if any) will appear here.</p>
             </div>
             <Separator />
-            <div className="text-center">
-              <h3 className="font-semibold text-lg mb-1 text-foreground">Disclaimer:</h3>
+            <div className="text-center px-4">
               <p className="text-muted-foreground text-xs italic">
                 QuantumGPT, powered by Blocksmith AI, was developed following extensive research in quantitative finance, market intelligence, and applied machine learning. Our models are built to deliver adaptive trading insights, deep behavioral analytics, and tailored strategies through real-time data analysis and visualization.
-                While QuantumGPT provides cutting-edge analytical tools, it is not a financial advisor. Blocksmith AI assumes no liability for losses or outcomes related to the use of QuantumGPT.
+                <br/><br/>
+                While QuantumGPT provides cutting-edge analytical tools, it is not a financial advisor. All outputs are for educational and informational purposes only. Trading and investing carry risks, and decisions should be made with careful due diligence and consideration of your financial situation. Blocksmith AI assumes no liability for losses or outcomes related to the use of QuantumGPT.
               </p>
             </div>
           </CardContent>
@@ -429,8 +429,7 @@ export default function TradingStrategyForm() {
 
               <Separator />
 
-              <div className="text-center">
-                <h3 className="font-semibold text-lg mb-1 text-foreground">Disclaimer:</h3>
+              <div className="text-center px-4">
                 <p className="text-muted-foreground text-xs italic">{strategy.disclaimer}</p>
               </div>
             </CardContent>
