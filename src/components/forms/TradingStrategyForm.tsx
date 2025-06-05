@@ -23,8 +23,8 @@ const tradingStrategyFormSchema = z.object({
 
 type TradingStrategyFormValues = z.infer<typeof tradingStrategyFormSchema>;
 
-type UserUISentiment = "bullish" | "neutral" | "bearish"; 
-type AISentiment = "bullish" | "bearish" | undefined; 
+type UserUISentiment = "bullish" | "neutral" | "bearish";
+type AISentiment = "bullish" | "bearish" | undefined;
 type UserRiskTolerance = "low" | "medium" | "high";
 
 declare global {
@@ -37,7 +37,7 @@ export default function TradingStrategyForm() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [strategy, setStrategy] = React.useState<SuggestTradingStrategyOutput | null>(null);
   const [currentSymbolForWidget, setCurrentSymbolForWidget] = React.useState<string | null>(null);
-  const [selectedUISentiment, setSelectedUISentiment] = React.useState<UserUISentiment>("neutral"); 
+  const [selectedUISentiment, setSelectedUISentiment] = React.useState<UserUISentiment>("neutral");
   const [selectedRiskTolerance, setSelectedRiskTolerance] = React.useState<UserRiskTolerance>("medium");
   const { toast } = useToast();
 
@@ -58,7 +58,7 @@ export default function TradingStrategyForm() {
       aiSentiment = 'bullish';
     } else if (selectedUISentiment === 'bearish') {
       aiSentiment = 'bearish';
-    } else { 
+    } else {
       aiSentiment = undefined;
     }
 
@@ -72,7 +72,7 @@ export default function TradingStrategyForm() {
       const output = await suggestTradingStrategy(inputForAI);
       setStrategy(output);
       if (output.tradePossible || output.currentPrice !== null) {
-        setCurrentSymbolForWidget(data.cryptocurrency); 
+        setCurrentSymbolForWidget(data.cryptocurrency);
       }
       toast({
         title: "Strategy Suggested",
@@ -81,7 +81,7 @@ export default function TradingStrategyForm() {
     } catch (error) {
       console.error("Trading Strategy error:", error);
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred. Please try again.";
-      setStrategy({ 
+      setStrategy({
         tradePossible: false,
         suggestedPosition: "None",
         strategyExplanation: `Error generating strategy: ${errorMessage}`,
@@ -108,15 +108,15 @@ export default function TradingStrategyForm() {
     if (currentSymbolForWidget && window.TradingView && typeof window.TradingView.MediumWidget === 'function') {
       const widgetContainerId = `tradingview-symbol-overview-${currentSymbolForWidget.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
       const container = document.getElementById(widgetContainerId);
-      if (container) { 
-        container.innerHTML = ''; 
+      if (container) {
+        container.innerHTML = '';
         new window.TradingView.MediumWidget({
           symbols: [[`${currentSymbolForWidget.toUpperCase()}|1D`]],
           chartOnly: false,
           width: "100%",
           height: 300,
           locale: "en",
-          colorTheme: "dark", 
+          colorTheme: "dark",
           autosize: true,
           showVolume: true,
           hideDateRanges: false,
@@ -130,10 +130,10 @@ export default function TradingStrategyForm() {
           valuesTracking: "1",
           changeMode: "price-and-percent",
           chartType: "area",
-          maLineColor: "#2962FF", 
+          maLineColor: "#2962FF",
           maLineWidth: 1,
           maLength: 9,
-          backgroundColor: "rgba(0, 0, 0, 0)", 
+          backgroundColor: "rgba(0, 0, 0, 0)",
           lineWidth: 2,
           lineType: 0,
           dateRanges: ["1d", "1w", "1m", "3m", "1y", "all"],
@@ -141,7 +141,7 @@ export default function TradingStrategyForm() {
         });
       }
     }
-  }, [currentSymbolForWidget]); 
+  }, [currentSymbolForWidget]);
 
   const formatPrice = (price?: number | null) => {
     if (price === undefined || price === null) return 'N/A';
@@ -155,11 +155,11 @@ export default function TradingStrategyForm() {
     if (level === "High") return "text-green-500 dark:text-green-400";
     return "text-muted-foreground";
   }
-  
+
   const getSentimentDisplayText = () => {
     if (selectedUISentiment === 'bullish') return "Bullish";
     if (selectedUISentiment === 'bearish') return "Bearish";
-    return "Neutral / General"; 
+    return "Neutral / General";
   };
 
   const getRiskToleranceDisplayText = () => {
@@ -174,13 +174,13 @@ export default function TradingStrategyForm() {
     <div className="space-y-8">
       <Card className="bg-card/70 backdrop-blur-sm border-slate-700 shadow-xl">
         <CardHeader>
-          <CardTitle className="font-headline text-2xl flex items-center gap-2 text-foreground">
+          <CardTitle className="font-headline text-2xl flex items-center justify-center gap-2 text-foreground">
             <Lightbulb className="h-6 w-6 text-primary" />
             AI Trading Strategy
           </CardTitle>
-          <CardDescription className="text-muted-foreground font-body">
-            Get AI-powered trading strategy suggestions. 
-            The AI attempts to use live market data via the Messari API. 
+          <CardDescription className="text-muted-foreground font-body text-center">
+            Get AI-powered trading strategy suggestions.
+            The AI attempts to use live market data.
             Select your market view (optional) and risk tolerance.
           </CardDescription>
         </CardHeader>
@@ -200,11 +200,11 @@ export default function TradingStrategyForm() {
                   </FormItem>
                 )}
               />
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormItem>
+
+              <div className="space-y-6"> {/* Changed from grid to space-y for vertical stacking */}
+                <FormItem className="flex flex-col items-center space-y-2">
                   <FormLabel className="text-foreground font-body">Your Market View (Optional)</FormLabel>
-                  <Tabs value={selectedUISentiment} onValueChange={(value) => setSelectedUISentiment(value as UserUISentiment)} className="w-full">
+                  <Tabs value={selectedUISentiment} onValueChange={(value) => setSelectedUISentiment(value as UserUISentiment)} className="w-auto max-w-md">
                     <TabsList className="grid w-full grid-cols-3 bg-muted/50">
                       <TabsTrigger value="bullish" className="flex items-center data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-md font-body">
                         <TrendingUp className="mr-1.5 h-4 w-4 text-green-500" /> Bullish
@@ -220,9 +220,9 @@ export default function TradingStrategyForm() {
                   <FormMessage />
                 </FormItem>
 
-                <FormItem>
+                <FormItem className="flex flex-col items-center space-y-2">
                   <FormLabel className="text-foreground font-body">Your Risk Tolerance</FormLabel>
-                  <Tabs value={selectedRiskTolerance} onValueChange={(value) => setSelectedRiskTolerance(value as UserRiskTolerance)} className="w-full">
+                  <Tabs value={selectedRiskTolerance} onValueChange={(value) => setSelectedRiskTolerance(value as UserRiskTolerance)} className="w-auto max-w-md">
                     <TabsList className="grid w-full grid-cols-3 bg-muted/50">
                       <TabsTrigger value="low" className="flex items-center data-[state=active]:bg-accent/20 data-[state=active]:text-accent data-[state=active]:shadow-md font-body">
                         <ShieldCheck className="mr-1.5 h-4 w-4 text-green-600" /> Low
@@ -261,21 +261,21 @@ export default function TradingStrategyForm() {
         <>
           <Card className="bg-card/70 backdrop-blur-sm border-slate-700 shadow-xl mt-6">
             <CardHeader>
-              <CardTitle className="font-headline text-xl flex items-center gap-2 text-foreground">
+              <CardTitle className="font-headline text-xl flex items-center justify-center gap-2 text-foreground">
                   <LineChart className="h-5 w-5 text-accent" />
-                  AI Strategy for {form.getValues("cryptocurrency").toUpperCase()} 
+                  AI Strategy for {form.getValues("cryptocurrency").toUpperCase()}
               </CardTitle>
-              <div className="text-sm text-muted-foreground font-body">
-                Analysis based on: 
-                Market View: <span className="font-semibold text-foreground">{getSentimentDisplayText()}</span> | 
+              <div className="text-sm text-muted-foreground font-body text-center">
+                Analysis based on:
+                Market View: <span className="font-semibold text-foreground">{getSentimentDisplayText()}</span> |
                 Risk Tolerance: <span className="font-semibold text-foreground">{getRiskToleranceDisplayText()}</span>
               </div>
               <Alert variant="default" className="mt-2 bg-background/50 border-border text-sm">
                 <AlertTitle className="font-semibold font-body text-foreground">Live Data Notice & Disclaimer</AlertTitle>
                 <AlertDescription className="text-muted-foreground font-body">
-                  The "Fetched Current Price" is attempted to be sourced live via the Messari API. 
+                  The "Fetched Current Price" is attempted to be sourced live via the Messari API.
                   If live data is unavailable, it may show N/A.
-                  All other figures and the strategy explanation are AI-generated illustrative examples based on this price and simulated chart analysis, considering your stated market sentiment and risk tolerance. 
+                  All other figures and the strategy explanation are AI-generated illustrative examples based on this price and simulated chart analysis, considering your stated market sentiment and risk tolerance.
                   This is NOT financial advice. Always do your own research and consult a financial advisor. Trading involves substantial risk of loss.
                 </AlertDescription>
               </Alert>
@@ -285,13 +285,13 @@ export default function TradingStrategyForm() {
                   <div id={`tradingview-symbol-overview-${currentSymbolForWidget.toLowerCase().replace(/[^a-z0-9]/g, '')}`} className="w-full h-[300px] rounded-md overflow-hidden shadow-inner bg-background/30"/>
               )}
               <div>
-                <h3 className="font-semibold text-lg mb-1 text-foreground">Strategy Explanation:</h3>
+                <h3 className="font-semibold text-lg mb-1 text-foreground text-center">Strategy Explanation:</h3>
                 <p className="text-muted-foreground text-sm whitespace-pre-line">{strategy.strategyExplanation}</p>
               </div>
-              
+
               <Separator />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-center md:text-left">
                 <div>
                   <h4 className="font-medium text-primary">Fetched Current Price:</h4>
                   <p className="text-2xl font-bold text-foreground">{strategy.currentPrice !== undefined && strategy.currentPrice !== null ? `$${formatPrice(strategy.currentPrice)}` : 'N/A'}</p>
@@ -305,8 +305,8 @@ export default function TradingStrategyForm() {
               </div>
 
               {strategy.riskWarnings && strategy.riskWarnings.length > 0 && (
-                <div>
-                  <h4 className="font-medium text-destructive flex items-center gap-2"><AlertTriangle className="h-5 w-5" /> Risk Warnings:</h4>
+                <div className="text-center md:text-left">
+                  <h4 className="font-medium text-destructive flex items-center justify-center md:justify-start gap-2"><AlertTriangle className="h-5 w-5" /> Risk Warnings:</h4>
                   <ul className="list-disc list-inside text-sm text-destructive/90 dark:text-red-400/90 space-y-1 mt-1">
                     {strategy.riskWarnings.map((warning, index) => (
                       <li key={index}>{warning}</li>
@@ -314,16 +314,16 @@ export default function TradingStrategyForm() {
                   </ul>
                 </div>
               )}
-              
+
               <Separator />
-              
-              <div>
+
+              <div className="text-center md:text-left">
                 <h3 className="font-semibold text-lg mb-1 text-foreground">Disclaimer:</h3>
                 <p className="text-muted-foreground text-xs italic">{strategy.disclaimer}</p>
               </div>
             </CardContent>
           </Card>
-          
+
           <TradingPredictionCard
             prediction={{
               trade: strategy.tradePossible,
