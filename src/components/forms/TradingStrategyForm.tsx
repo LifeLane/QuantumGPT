@@ -8,21 +8,23 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; // Added Tabs
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { suggestTradingStrategy, type SuggestTradingStrategyInput, type SuggestTradingStrategyOutput } from "@/ai/flows/ai-trading-strategy-suggestion";
-import { Loader2, Lightbulb, LineChart, AlertTriangle } from "lucide-react"; // Added AlertTriangle
+import { Loader2, Lightbulb, LineChart, AlertTriangle, TrendingUp, TrendingDown, MinusCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import TradingPredictionCard from "@/components/features/TradingPredictionCard";
 
 const tradingStrategyFormSchema = z.object({
   cryptocurrency: z.string().min(1, "Cryptocurrency symbol is required (e.g., BTC, ETH).").transform(val => val.toUpperCase()),
-  riskTolerance: z.enum(["low", "medium", "high"], { required_error: "Risk tolerance is required." }),
+  // userSentiment is handled by Tabs, not react-hook-form directly here
 });
 
 type TradingStrategyFormValues = z.infer<typeof tradingStrategyFormSchema>;
+
+type UserSentiment = "bullish" | "neutral" | "bearish";
 
 declare global {
   interface Window {
@@ -34,13 +36,13 @@ export default function TradingStrategyForm() {
   const [isLoading, setIsLoading] = React.useState(false);
   const [strategy, setStrategy] = React.useState<SuggestTradingStrategyOutput | null>(null);
   const [currentSymbolForWidget, setCurrentSymbolForWidget] = React.useState<string | null>(null);
+  const [selectedSentiment, setSelectedSentiment] = React.useState<UserSentiment>("neutral");
   const { toast } = useToast();
 
   const form = useForm<TradingStrategyFormValues>({
     resolver: zodResolver(tradingStrategyFormSchema),
     defaultValues: {
       cryptocurrency: "",
-      riskTolerance: "medium",
     },
   });
 
@@ -48,10 +50,16 @@ export default function TradingStrategyForm() {
     setIsLoading(true);
     setStrategy(null);
     setCurrentSymbolForWidget(null);
+
+    const inputForAI: SuggestTradingStrategyInput = {
+      cryptocurrency: data.cryptocurrency,
+      userSentiment: selectedSentiment,
+    };
+
     try {
-      const output = await suggestTradingStrategy(data);
+      const output = await suggestTradingStrategy(inputForAI);
       setStrategy(output);
-      if (output.tradePossible || output.currentPrice !== null) { // Show widget if trade possible or price was fetched
+      if (output.tradePossible || output.currentPrice !== null) {
         setCurrentSymbolForWidget(data.cryptocurrency); 
       }
       toast({
@@ -86,12 +94,12 @@ export default function TradingStrategyForm() {
 
   React.useEffect(() => {
     if (currentSymbolForWidget && window.TradingView && typeof window.TradingView.MediumWidget === 'function') {
-      const widgetContainerId = `tradingview-symbol-overview-${currentSymbolForWidget.toLowerCase().replace(/[^a-z0-9]/g, '')}`; // Sanitize ID
+      const widgetContainerId = `tradingview-symbol-overview-${currentSymbolForWidget.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
       const container = document.getElementById(widgetContainerId);
       if (container) { 
         container.innerHTML = ''; 
         new window.TradingView.MediumWidget({
-          symbols: [[`${currentSymbolForWidget.toUpperCase()}|1D`]], // TradingView often prefers uppercase and might not need exchange prefix for general symbols
+          symbols: [[`${currentSymbolForWidget.toUpperCase()}|1D`]],
           chartOnly: false,
           width: "100%",
           height: 300,
@@ -136,6 +144,12 @@ export default function TradingStrategyForm() {
     return "text-muted-foreground";
   }
 
+  const sentimentIcon = (sentiment: UserSentiment) => {
+    if (sentiment === 'bullish') return <TrendingUp className="mr-2 h-4 w-4 text-green-500" />;
+    if (sentiment === 'bearish') return <TrendingDown className="mr-2 h-4 w-4 text-red-500" />;
+    return <MinusCircle className="mr-2 h-4 w-4 text-yellow-500" />;
+  }
+
   return (
     <div className="space-y-8">
       <Card className="shadow-xl border-primary/20">
@@ -151,7 +165,7 @@ export default function TradingStrategyForm() {
         </CardHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               <FormField
                 control={form.control}
                 name="cryptocurrency"
@@ -165,28 +179,25 @@ export default function TradingStrategyForm() {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="riskTolerance"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Risk Tolerance</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger className="text-base">
-                          <SelectValue placeholder="Select your risk tolerance" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="low">Low</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              
+              <FormItem>
+                <FormLabel>Your Market Sentiment</FormLabel>
+                <Tabs value={selectedSentiment} onValueChange={(value) => setSelectedSentiment(value as UserSentiment)} className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="bullish" className="flex items-center">
+                      <TrendingUp className="mr-1.5 h-4 w-4 text-green-500 group-data-[state=active]:text-green-600" /> Bullish
+                    </TabsTrigger>
+                    <TabsTrigger value="neutral" className="flex items-center">
+                      <MinusCircle className="mr-1.5 h-4 w-4 text-yellow-500 group-data-[state=active]:text-yellow-600" /> Neutral
+                    </TabsTrigger>
+                    <TabsTrigger value="bearish" className="flex items-center">
+                      <TrendingDown className="mr-1.5 h-4 w-4 text-red-500 group-data-[state=active]:text-red-600" /> Bearish
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+                 <FormMessage />
+              </FormItem>
+
             </CardContent>
             <CardFooter>
               <Button type="submit" disabled={isLoading} className="bg-primary hover:bg-primary/90 text-primary-foreground">
@@ -211,14 +222,14 @@ export default function TradingStrategyForm() {
             <CardHeader>
               <CardTitle className="font-headline text-xl flex items-center gap-2">
                   <LineChart className="h-5 w-5 text-accent" />
-                  AI Strategy for {form.getValues("cryptocurrency").toUpperCase()}
+                  AI Strategy for {form.getValues("cryptocurrency").toUpperCase()} (Sentiment: {selectedSentiment.charAt(0).toUpperCase() + selectedSentiment.slice(1)})
               </CardTitle>
               <Alert variant="default" className="mt-2 bg-secondary/50 border-border">
                 <AlertTitle className="font-semibold">Live Data Notice & Disclaimer</AlertTitle>
                 <AlertDescription>
                   The "Fetched Current Price" is attempted to be sourced live via the Messari API. 
                   If live data is unavailable, it may show N/A.
-                  All other figures and the strategy explanation are AI-generated illustrative examples based on this price and simulated chart analysis. 
+                  All other figures and the strategy explanation are AI-generated illustrative examples based on this price and simulated chart analysis, considering your stated market sentiment. 
                   This is NOT financial advice. Always do your own research and consult a financial advisor. Trading involves substantial risk of loss.
                 </AlertDescription>
               </Alert>
@@ -267,7 +278,6 @@ export default function TradingStrategyForm() {
             </CardContent>
           </Card>
           
-          {/* TradingPredictionCard moved to the bottom */}
           <TradingPredictionCard
             prediction={{
               trade: strategy.tradePossible,
@@ -287,7 +297,7 @@ export default function TradingStrategyForm() {
         <Card className="shadow-md">
             <CardContent className="pt-6">
                 <p className="text-center text-muted-foreground">
-                    Enter a cryptocurrency symbol and select your risk tolerance to get an AI-powered trading strategy.
+                    Enter a cryptocurrency symbol and select your market sentiment to get an AI-powered trading strategy.
                 </p>
             </CardContent>
         </Card>
