@@ -24,8 +24,10 @@ const MarketScroll: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchPrices = async () => {
+    // Reset error state at the beginning of each fetch attempt
+    setError(null); 
+    setLoading(true);
     try {
-      setLoading(true);
       const trendingResponse = await fetch('https://api.coingecko.com/api/v3/search/trending');
       if (!trendingResponse.ok) {
         throw new Error(`HTTP error! status: ${trendingResponse.status} on trending`);
@@ -38,17 +40,19 @@ const MarketScroll: React.FC = () => {
       }
       const btcPriceData = await btcPriceResponse.json();
 
-      setTrending(trendingData.coins);
+      setTrending(trendingData.coins || []); // Ensure trendingData.coins is not undefined
       if (btcPriceData.bitcoin && btcPriceData.bitcoin.usd) {
         setBtcPriceUsd(btcPriceData.bitcoin.usd);
       } else {
         console.warn("Could not fetch BTC to USD price. USD prices for trending coins will not be available.");
         setBtcPriceUsd(null);
       }
-      setError(null);
+      // setError(null); // Already done at the beginning
     } catch (err: any) {
       console.error("Error fetching market scroll data:", err);
-      setError(err.message);
+      setError(err.message || "An unknown error occurred while fetching market data.");
+      setTrending([]); // Clear trending data on error
+      setBtcPriceUsd(null); // Clear BTC price on error
     } finally {
       setLoading(false);
     }
@@ -60,15 +64,15 @@ const MarketScroll: React.FC = () => {
     return () => clearInterval(intervalId);
   }, []);
 
-  if (loading && trending.length === 0) {
+  if (loading && trending.length === 0 && !error) { // Only show initial loading if no error
     return <div className="text-center py-1 text-xs text-muted-foreground">Loading trending...</div>;
   }
 
-  if (error && trending.length === 0) {
-    return <div className="text-center py-1 text-xs text-destructive dark:text-red-400">Error loading.</div>;
+  if (error) { // Prioritize showing error message
+    return <div className="text-center py-1 text-xs text-destructive dark:text-red-400">Error: {error.length > 50 ? error.substring(0,50) + "..." : error}</div>;
   }
   
-  if (trending.length === 0) {
+  if (!loading && trending.length === 0) { // If not loading, no error, but no data
     return <div className="text-center py-1 text-xs text-muted-foreground">No trending data.</div>;
   }
 
@@ -87,6 +91,9 @@ const MarketScroll: React.FC = () => {
     if (mod === 1) return <ArrowDownRight className="h-3 w-3 text-red-500 ml-0.5 shrink-0" />;
     return <Activity className="h-3 w-3 text-gray-500 ml-0.5 shrink-0" />;
   };
+
+  // Only render the scroll if there's data to show and no critical error preventing data display.
+  if (trending.length === 0) return null; 
 
   const duplicatedTrending = [...trending, ...trending]; // Duplicate for seamless scroll
 
@@ -129,4 +136,3 @@ const MarketScroll: React.FC = () => {
 
 export default MarketScroll;
 
-    
