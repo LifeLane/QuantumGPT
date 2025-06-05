@@ -1,23 +1,14 @@
 
-import LoginForm from "@/components/forms/LoginForm";
-import Link from "next/link";
-
-export default function LoginPage() {
+// This page is deprecated and should not be rendered.
+// The application now redirects from / to /dashboard.
+export default function DeprecatedLoginPage() {
+  if (typeof window !== 'undefined') {
+    // Attempt client-side redirect as a fallback if server-side isn't caught
+    window.location.href = '/dashboard';
+  }
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-headline font-semibold tracking-tight">Welcome Back!</h2>
-        <p className="text-sm text-muted-foreground">
-          Sign in to access your Quantum GPT dashboard.
-        </p>
-      </div>
-      <LoginForm />
-      <p className="text-center text-sm text-muted-foreground">
-        Don&apos;t have an account?{" "}
-        <Link href="/signup" className="font-medium text-primary hover:underline">
-          Sign up
-        </Link>
-      </p>
+    <div>
+      <p>Redirecting to dashboard...</p>
     </div>
   );
 }
