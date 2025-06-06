@@ -69,6 +69,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     // It will still run on mobile, but the UI consuming it is hidden.
     const fetchMarketData = async () => {
       setIsLoadingData(true);
+      setMarketData(prev => prev ? {...prev, hasError: false} : null); // Reset error state
       try {
         const globalRes = await fetch('https://api.coingecko.com/api/v3/global');
         if (!globalRes.ok) {
@@ -129,6 +130,60 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const intervalId = setInterval(fetchMarketData, 60000);
     return () => clearInterval(intervalId);
   }, []);
+
+  React.useEffect(() => {
+    const originalWindowOnError = window.onerror;
+    const originalWindowOnUnhandledRejection = window.onunhandledrejection;
+
+    window.onerror = (message, source, lineno, colno, error) => {
+      const messageStr = typeof message === 'string' ? message : (error && error.message);
+      const sourceStr = typeof source === 'string' ? source : '';
+
+      if (
+        (sourceStr.startsWith('chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn')) || // MetaMask specific ID
+        (messageStr && messageStr.toLowerCase().includes('metamask extension not found'))
+      ) {
+        console.warn('QuantumGPT Global Error Handler: Suppressed MetaMask extension error:', { message, source, error });
+        return true; // Prevent default handling and Next.js overlay for this specific error
+      }
+
+      if (originalWindowOnError) {
+        // Using .call to ensure correct `this` context if the original handler expects it
+        return originalWindowOnError.call(window, message, source, lineno, colno, error);
+      }
+      return false; // Default browser handling for other errors
+    };
+
+    window.onunhandledrejection = (event: PromiseRejectionEvent) => {
+      if (event.reason) {
+        const reason = event.reason;
+        const messageStr = typeof reason.message === 'string' ? reason.message : (typeof reason === 'string' ? reason : '');
+        const stackStr = typeof reason.stack === 'string' ? reason.stack : '';
+
+        if (
+          (messageStr.toLowerCase().includes('metamask extension not found')) ||
+          (stackStr.toLowerCase().includes('metamask') && messageStr.toLowerCase().includes('extension context invalidated')) // Another common extension issue
+        ) {
+           console.warn('QuantumGPT Global Error Handler: Suppressed MetaMask promise rejection:', event.reason);
+           event.preventDefault(); // Prevent default handling for this specific error
+           return;
+        }
+      }
+      
+      if (originalWindowOnUnhandledRejection) {
+         // Using .call to ensure correct `this` context
+        originalWindowOnUnhandledRejection.call(window, event);
+        return;
+      }
+      // If no original handler, let the browser handle other rejections (typically logs to console)
+    };
+
+    return () => {
+      window.onerror = originalWindowOnError;
+      window.onunhandledrejection = originalWindowOnUnhandledRejection;
+    };
+  }, []);
+
 
   const getSentimentIcon = () => {
     if (isLoadingData || !marketData || marketData.marketCapChange24h === null || marketData.hasError) return <MinusCircle className="h-3 w-3 text-yellow-500" />;
@@ -296,3 +351,5 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </SidebarProvider>
   );
 }
+
+    

@@ -33,7 +33,9 @@ const SuggestTradingStrategyOutputSchema = z.object({
   confidenceLevel: z.enum(['High', 'Medium', 'Low', 'Very Low - Risk Warning']).optional().describe("The AI's confidence in this strategy. Set to 'Very Low - Risk Warning' if significant risks like potential rugpull indicators are identified."),
   riskWarnings: z.array(z.string()).optional().describe("Specific risk warnings identified by the AI, such as potential rugpull indicators (e.g., extreme unusual price/volume activity without clear cause, suspicious project characteristics based on general knowledge if applicable), high volatility, or poor liquidity signals from the provided data."),
   disclaimer: z.string().describe(
-      "QuantumGPT, powered by Blocksmith AI, was developed following extensive research in quantitative finance, market intelligence, and applied machine learning. Our models are built to deliver adaptive trading insights, deep behavioral analytics, and tailored strategies through real-time data analysis and visualization.\n\nWhile QuantumGPT provides cutting-edge analytical tools, it is not a financial advisor. All outputs are for educational and informational purposes only. Trading and investing carry risks, and decisions should be made with careful due diligence and consideration of your financial situation. Blocksmith AI assumes no liability for losses or outcomes related to the use of QuantumGPT."
+      `QuantumGPT, powered by Blocksmith AI, was developed following extensive research in quantitative finance, market intelligence, and applied machine learning. Our models are built to deliver adaptive trading insights, deep behavioral analytics, and tailored strategies through real-time data analysis and visualization.
+
+While QuantumGPT provides cutting-edge analytical tools, it is not a financial advisor. All outputs are for educational and informational purposes only. Trading and investing carry risks, and decisions should be made with careful due diligence and consideration of your financial situation. Blocksmith AI assumes no liability for losses or outcomes related to the use of QuantumGPT.`
     ),
 });
 export type SuggestTradingStrategyOutput = z.infer<typeof SuggestTradingStrategyOutputSchema>;
@@ -89,8 +91,12 @@ Your Task:
         *   Set \`tradePossible\` to \`true\`.
         *   Determine a \`suggestedPosition\` ("Long" or "Short") that aligns with your analysis (your determined \`aiMarketSentiment\` and user's \`riskTolerance\`).
         *   Estimate a \`confidenceLevel\` ("High", "Medium", "Low") for this strategy.
+        *   **Define Price Points**: Based on your \`suggestedPosition\` and \`riskTolerance\`:
+            *   If \`suggestedPosition\` is "Long": Set \`stopLossLevel\` *below* the \`entryPoint\` and \`profitTarget\` *above* the \`entryPoint\`.
+            *   If \`suggestedPosition\` is "Short": Set \`stopLossLevel\` *above* the \`entryPoint\` and \`profitTarget\` *below* the \`entryPoint\`.
+            *   The distance of the stop loss and profit target from the entry point should be adjusted based on the user's \`riskTolerance\` (tighter for 'low', wider for 'high').
         *   Provide \`entryPoint\`, \`exitPoint\`, \`stopLossLevel\`, and \`profitTarget\`. These price points should reflect the chosen risk tolerance (e.g., tighter stops for low risk).
-        *   In your \`strategyExplanation\`, detail your reasoning. Explain how your determined AI market sentiment AND the user's risk tolerance were considered. Also, if the cryptocurrency and market conditions are generally suitable, briefly discuss how this spot idea *could* translate to **futures** (e.g., "For futures traders with a {{{riskTolerance}}} risk tolerance, this long position could be entered. For {{{riskTolerance}}} risk, consider X leverage, being mindful of liquidation risk.") or **options** (e.g., "An options trader with a {{{riskTolerance}}} risk tolerance might consider buying call options with a strike near the entry point if bullish, or puts if bearish, tailoring strike and expiry to their specific risk profile."). These should be general derivative considerations, not specific contract recommendations.
+        *   In your \`strategyExplanation\`, detail your reasoning. Explain how your determined AI market Sentiment AND the user's risk tolerance were considered. Also, if the cryptocurrency and market conditions are generally suitable, briefly discuss how this spot idea *could* translate to **futures** (e.g., "For futures traders with a {{{riskTolerance}}} risk tolerance, this long position could be entered. For {{{riskTolerance}}} risk, consider X leverage, being mindful of liquidation risk.") or **options** (e.g., "An options trader with a {{{riskTolerance}}} risk tolerance might consider buying call options with a strike near the entry point if bullish, or puts if bearish, tailoring strike and expiry to their specific risk profile."). These should be general derivative considerations, not specific contract recommendations.
 
 4.  **Output**: Your response MUST be in the JSON format defined by the output schema and include all fields.
 
@@ -132,7 +138,9 @@ const suggestTradingStrategyFlow = ai.defineFlow(
         marketData: marketData,
     });
     
-    const defaultDisclaimer = "QuantumGPT, powered by Blocksmith AI, was developed following extensive research in quantitative finance, market intelligence, and applied machine learning. Our models are built to deliver adaptive trading insights, deep behavioral analytics, and tailored strategies through real-time data analysis and visualization.\n\nWhile QuantumGPT provides cutting-edge analytical tools, it is not a financial advisor. All outputs are for educational and informational purposes only. Trading and investing carry risks, and decisions should be made with careful due diligence and consideration of your financial situation. Blocksmith AI assumes no liability for losses or outcomes related to the use of QuantumGPT.";
+    const defaultDisclaimer = `QuantumGPT, powered by Blocksmith AI, was developed following extensive research in quantitative finance, market intelligence, and applied machine learning. Our models are built to deliver adaptive trading insights, deep behavioral analytics, and tailored strategies through real-time data analysis and visualization.
+
+While QuantumGPT provides cutting-edge analytical tools, it is not a financial advisor. All outputs are for educational and informational purposes only. Trading and investing carry risks, and decisions should be made with careful due diligence and consideration of your financial situation. Blocksmith AI assumes no liability for losses or outcomes related to the use of QuantumGPT.`;
 
     // Initialize with AI output or sensible defaults
     const finalOutput: SuggestTradingStrategyOutput = {
@@ -220,3 +228,4 @@ const suggestTradingStrategyFlow = ai.defineFlow(
     return finalOutput;
   }
 );
+
