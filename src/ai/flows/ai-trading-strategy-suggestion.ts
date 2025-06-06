@@ -125,7 +125,7 @@ const suggestTradingStrategyFlow = ai.defineFlow(
       console.error(`[AIStrategyFlow] Error calling getCryptoMarketDataTool for ${input.cryptocurrency}:`, toolError);
     }
 
-    console.log(`[AIStrategyFlow] Calling prompt with input:`, { ...input, marketData }); 
+    console.log(`[AIStrategyFlow] Calling prompt with input:`, { ...input, marketData });
     const {output} = await prompt({
         cryptocurrency: input.cryptocurrency,
         riskTolerance: input.riskTolerance,
@@ -134,72 +134,89 @@ const suggestTradingStrategyFlow = ai.defineFlow(
     
     const defaultDisclaimer = "QuantumGPT, powered by Blocksmith AI, was developed following extensive research in quantitative finance, market intelligence, and applied machine learning. Our models are built to deliver adaptive trading insights, deep behavioral analytics, and tailored strategies through real-time data analysis and visualization.\n\nWhile QuantumGPT provides cutting-edge analytical tools, it is not a financial advisor. All outputs are for educational and informational purposes only. Trading and investing carry risks, and decisions should be made with careful due diligence and consideration of your financial situation. Blocksmith AI assumes no liability for losses or outcomes related to the use of QuantumGPT.";
 
-    if (!output) {
-        console.error("[AIStrategyFlow] AI model did not return an output. Constructing default error response.");
-        return {
-            aiMarketSentiment: "Neutral", // Default AI sentiment
-            tradePossible: false,
-            suggestedPosition: "None",
-            strategyExplanation: "The AI model did not return a valid strategy. This could be due to an internal error or inability to process the request. Market data may or may not have been available.",
-            currentPrice: marketData?.price ?? null,
-            entryPoint: null,
-            exitPoint: null,
-            stopLossLevel: null,
-            profitTarget: null,
-            confidenceLevel: "Very Low - Risk Warning",
-            riskWarnings: ["AI model processing error."],
-            disclaimer: defaultDisclaimer,
-        };
-    }
-    
-    console.log(`[AIStrategyFlow] AI Output for ${input.cryptocurrency}:`, output);
-    
+    // Initialize with AI output or sensible defaults
     const finalOutput: SuggestTradingStrategyOutput = {
-        aiMarketSentiment: output.aiMarketSentiment || "Neutral", // Ensure AI sentiment is always set
-        tradePossible: output.tradePossible,
-        suggestedPosition: output.suggestedPosition,
-        strategyExplanation: output.strategyExplanation,
-        currentPrice: marketData?.price ?? null, 
-        entryPoint: output.entryPoint,
-        exitPoint: output.exitPoint,
-        stopLossLevel: output.stopLossLevel,
-        profitTarget: output.profitTarget,
-        confidenceLevel: output.confidenceLevel || (output.tradePossible ? "Medium" : "Very Low - Risk Warning"),
-        riskWarnings: output.riskWarnings || [],
-        disclaimer: output.disclaimer || defaultDisclaimer, // Ensure disclaimer is always set
+        aiMarketSentiment: output?.aiMarketSentiment || "Neutral",
+        tradePossible: output?.tradePossible ?? false, // Default to false if output is entirely missing
+        suggestedPosition: output?.suggestedPosition || "None",
+        strategyExplanation: output?.strategyExplanation || "Strategy could not be determined.",
+        currentPrice: marketData?.price ?? null,
+        entryPoint: output?.entryPoint || null,
+        exitPoint: output?.exitPoint || null,
+        stopLossLevel: output?.stopLossLevel || null,
+        profitTarget: output?.profitTarget || null,
+        confidenceLevel: output?.confidenceLevel, // Will be properly set later if tradePossible is false
+        riskWarnings: output?.riskWarnings || [],
+        disclaimer: defaultDisclaimer, // Always use our default disclaimer
     };
 
-    if (!marketData || marketData.price === null || marketData.price === undefined) {
-        finalOutput.tradePossible = false;
-        finalOutput.suggestedPosition = "None";
-        finalOutput.entryPoint = null;
-        finalOutput.exitPoint = null;
-        finalOutput.stopLossLevel = null;
-        finalOutput.profitTarget = null;
-        finalOutput.confidenceLevel = "Very Low - Risk Warning";
+    // Handle case where AI model failed to return any structured output
+    if (!output) {
+        console.error("[AIStrategyFlow] AI model did not return an output. Constructing default error response.");
+        finalOutput.tradePossible = false; // Ensure this
+        finalOutput.strategyExplanation = "The AI model did not return a valid strategy. This could be due to an internal error or inability to process the request. Market data may or may not have been available.";
+        finalOutput.aiMarketSentiment = "Neutral";
+        // Confidence and riskWarnings will be handled by the !finalOutput.tradePossible block below
+    }
+
+    const isMarketDataMissing = !marketData || marketData.price === null || marketData.price === undefined;
+
+    if (isMarketDataMissing) {
+        finalOutput.tradePossible = false; // Ensure it's false
         finalOutput.aiMarketSentiment = "Neutral"; // Can't determine sentiment without data
+        
+        const baseExplanation = "Strategy cannot be determined due to missing or incomplete market data";
+        if (finalOutput.strategyExplanation === "Strategy could not be determined." || !finalOutput.strategyExplanation.toLowerCase().includes("missing market data")) {
+          finalOutput.strategyExplanation = `${baseExplanation} for ${input.cryptocurrency}. ${finalOutput.strategyExplanation === "Strategy could not be determined." ? "" : finalOutput.strategyExplanation}`;
+        }
+        
         if (!finalOutput.riskWarnings.some(w => w.toLowerCase().includes("missing market data"))) {
-             finalOutput.riskWarnings.push(`Strategy cannot be determined due to missing or incomplete market data for ${input.cryptocurrency}.`);
-        }
-        if (!finalOutput.strategyExplanation.toLowerCase().includes("missing market data")) {
-             finalOutput.strategyExplanation = `Strategy cannot be determined due to missing or incomplete market data for ${input.cryptocurrency}. ${finalOutput.strategyExplanation}`;
-        }
-    } else if (!finalOutput.tradePossible) { 
-        finalOutput.suggestedPosition = "None";
-        finalOutput.entryPoint = null;
-        finalOutput.exitPoint = null;
-        finalOutput.stopLossLevel = null;
-        finalOutput.profitTarget = null;
-        finalOutput.confidenceLevel = finalOutput.confidenceLevel || "Very Low - Risk Warning"; 
-         if (finalOutput.riskWarnings.length === 0 && finalOutput.confidenceLevel === "Very Low - Risk Warning") {
-            finalOutput.riskWarnings.push("AI determined no viable trade based on current data and risk assessment.");
+             finalOutput.riskWarnings.push(`${baseExplanation} for ${input.cryptocurrency}.`);
         }
     }
-    // Ensure the final disclaimer is always the updated one.
-    finalOutput.disclaimer = defaultDisclaimer;
 
+    // If trade is not possible for ANY reason (missing data, or AI returned tradePossible:false, or model error)
+    // ensure all related fields are consistent.
+    if (!finalOutput.tradePossible) {
+        finalOutput.suggestedPosition = "None";
+        finalOutput.entryPoint = null;
+        finalOutput.exitPoint = null;
+        finalOutput.stopLossLevel = null;
+        finalOutput.profitTarget = null;
+        finalOutput.confidenceLevel = "Very Low - Risk Warning"; // Always set this if no trade
+        
+        // If AI decided no trade OR model failed, but no specific warning was provided, add a default one.
+        // Avoid adding if it's already explained by missing data or a model processing error message.
+        const hasExistingCriticalWarning = finalOutput.riskWarnings.some(w => 
+            w.toLowerCase().includes("missing market data") || 
+            w.toLowerCase().includes("ai model processing error")
+        );
+
+        if (finalOutput.riskWarnings.length === 0 || (!hasExistingCriticalWarning && !output?.riskWarnings?.length)) {
+            if (!isMarketDataMissing && !output) { // Model failed, no output
+                 if (!finalOutput.riskWarnings.some(w => w.toLowerCase().includes("ai model processing error"))){
+                    finalOutput.riskWarnings.push("AI model processing error. Could not generate strategy.");
+                 }
+            } else if (!isMarketDataMissing) { // Data available, but AI decided no trade and gave no specific warning
+                finalOutput.riskWarnings.push("AI determined no viable trade based on current data and risk assessment.");
+            }
+        }
+        
+        // If the explanation is still the default "Strategy could not be determined." and it's not due to missing data or model error,
+        // provide a more informative generic explanation.
+        if (finalOutput.strategyExplanation === "Strategy could not be determined." && !isMarketDataMissing && output) {
+             finalOutput.strategyExplanation = "AI analyzed the market data but determined no viable trade strategy at this time. This could be due to unclear signals, high perceived risk, or other analytical factors identified by the AI."
+        }
+
+    } else { // Trade IS possible
+        // Ensure confidence is at least 'Low' if AI says trade is possible but provides 'Very Low - Risk Warning' or no confidence.
+        if (!finalOutput.confidenceLevel || finalOutput.confidenceLevel === "Very Low - Risk Warning") {
+            finalOutput.confidenceLevel = "Low"; 
+        }
+    }
+    
+    console.log(`[AIStrategyFlow] Final Output for ${input.cryptocurrency}:`, finalOutput);
+    finalOutput.disclaimer = defaultDisclaimer; // Ensure disclaimer is always the standard one.
     return finalOutput;
   }
 );
-
-    
