@@ -16,15 +16,15 @@ import { getCryptoMarketDataTool, type MarketData, MarketDataSchema } from '@/ai
 
 const SuggestTradingStrategyInputSchema = z.object({
   cryptocurrency: z.string().describe('The ticker symbol of the cryptocurrency to analyze (e.g., BTC).'),
-  userSentiment: z.enum(['bullish', 'bearish']).optional().describe("The user's current market sentiment (bullish, bearish), if provided. If not provided, the AI performs a general analysis based on risk tolerance."),
   riskTolerance: z.enum(['low', 'medium', 'high']).describe("The user's defined risk tolerance level (low, medium, high)."),
 });
 export type SuggestTradingStrategyInput = z.infer<typeof SuggestTradingStrategyInputSchema>;
 
 const SuggestTradingStrategyOutputSchema = z.object({
+  aiMarketSentiment: z.enum(['Bullish', 'Bearish', 'Neutral']).describe("The AI's determined market sentiment based on its analysis of the provided data (current price, volume, 24h change)."),
   tradePossible: z.boolean().describe('Whether a trade is currently viable based on the analysis. Set to false if no clear opportunity, if data is missing, or if high risk (like rugpull) is suspected.'),
   suggestedPosition: z.enum(['Long', 'Short', 'None']).describe('The suggested trading position (Long, Short). Set to "None" if tradePossible is false.'),
-  strategyExplanation: z.string().describe('A detailed analysis explaining the reasoning behind the trade recommendation and the suggested price points. This should consider the current market price, user market sentiment (if provided), risk tolerance, common technical analysis principles (like trends, support/resistance, indicators like MA/RSI/MACD, and chart patterns). If applicable, briefly mention general considerations for futures (e.g., leverage implications based on risk tolerance) or options (e.g., basic call/put ideas) based on the analysis. This explanation should be based on *simulating* chart analysis using ONLY the provided market data points (price, volume, change).'),
+  strategyExplanation: z.string().describe('A detailed analysis explaining the reasoning behind the trade recommendation and the suggested price points. This should consider the current market price, AI-determined market sentiment, risk tolerance, common technical analysis principles (like trends, support/resistance, indicators like MA/RSI/MACD, and chart patterns). If applicable, briefly mention general considerations for futures (e.g., leverage implications based on risk tolerance) or options (e.g., basic call/put ideas) based on the analysis. This explanation should be based on *simulating* chart analysis using ONLY the provided market data points (price, volume, change).'),
   currentPrice: z.number().nullable().describe('The current market price of the cryptocurrency fetched by the tool, or null if unavailable.'),
   entryPoint: z.number().nullable().describe('The recommended entry price for the trade, or null if no trade is recommended or tradePossible is false.'),
   exitPoint: z.number().nullable().describe('The recommended exit price for the trade, or null if no trade is recommended or tradePossible is false.'),
@@ -47,21 +47,15 @@ const prompt = ai.definePrompt({
   model: geminiPro,
   input: {schema: z.object({
     cryptocurrency: SuggestTradingStrategyInputSchema.shape.cryptocurrency,
-    userSentiment: SuggestTradingStrategyInputSchema.shape.userSentiment, // Will be 'bullish', 'bearish', or undefined
     riskTolerance: SuggestTradingStrategyInputSchema.shape.riskTolerance, // Will be 'low', 'medium', or 'high'
     marketData: MarketDataSchema.nullable().describe("Current market data for the cryptocurrency. This will be fetched by a tool prior to calling you. If this is null, or if price is null, a trading strategy cannot be reliably formed."),
   })},
   output: {schema: SuggestTradingStrategyOutputSchema},
   prompt: `You are an AI-powered trading strategy advisor with expertise in technical chart analysis and risk assessment.
-Your goal is to provide a clear, actionable trading strategy for the given cryptocurrency based *solely* on the provided market data points (current price, 24h volume, 24h price change), the user's stated risk tolerance, and their market sentiment (if provided). You DO NOT have access to a live chart image; you must *simulate* chart analysis using only these data points.
+Your goal is to provide a clear, actionable trading strategy for the given cryptocurrency.
 
 Cryptocurrency: {{{cryptocurrency}}}
 User Risk Tolerance: {{{riskTolerance}}}
-{{#if userSentiment}}
-User Market Sentiment: {{{userSentiment}}}
-{{else}}
-User Market Sentiment: Not specified (perform general analysis based on market data and risk tolerance).
-{{/if}}
 
 Current Market Data (from tool):
 - Current Price: {{#if marketData.price}}{{marketData.price}}{{else}}not available{{/if}}
@@ -69,17 +63,21 @@ Current Market Data (from tool):
 - 24h Price Change (%): {{#if marketData.priceChange24hPercent}}{{marketData.priceChange24hPercent}}%{{else}}not available{{/if}}
 
 Your Task:
-1.  **Analyze Market Data, User Sentiment & Risk Tolerance**: Based *only* on the provided 'Current Price', '24h Volume', '24h Price Change (%)', 'User Risk Tolerance', and 'User Market Sentiment' (if provided):
-    *   Infer the potential current trend (e.g., "Given the positive 24h price change and high volume, the short-term trend appears to be upward.").
+1.  **Determine AI Market Sentiment**: Based *solely* on the 'Current Price', '24h Volume', and '24h Price Change (%)' provided above:
+    *   Perform a brief technical assessment. For example, if the price change is significantly positive on high volume, you might determine 'Bullish'. If significantly negative on high volume, 'Bearish'. If there are mixed signals, low volume with small changes, or if data is insufficient to make a strong call, determine 'Neutral'.
+    *   Populate the \`aiMarketSentiment\` field in your output with "Bullish", "Bearish", or "Neutral" based on this assessment.
+
+2.  **Analyze Market Data, Your Determined Sentiment & User Risk Tolerance**: Based *only* on the provided 'Current Price', '24h Volume', '24h Price Change (%)', your determined \`aiMarketSentiment\`, and 'User Risk Tolerance':
+    *   Infer the potential current trend (e.g., "Given the positive 24h price change and high volume, and my determined Bullish sentiment, the short-term trend appears to be upward.").
     *   Infer potential key support and resistance levels *relative to the current price*.
     *   Hypothesize plausible chart patterns (e.g., "A significant price increase on high volume might suggest a breakout.").
     *   Consider how common technical indicators (like Moving Averages, RSI, MACD) *might behave* given this limited data.
     *   **Crucially, assess for potential "rugpull" or extreme risk indicators**. Based on your general knowledge of scam tactics, consider if the provided data (e.g., extreme price spikes on low volume followed by sharp drops, or very new/unknown coins with sudden massive pumps) suggests manipulation. If such risks are identified, this should heavily influence your strategy.
     *   Your analysis for these points MUST be based on simulating what these indicators/patterns would look like given ONLY the numeric data provided. Do NOT invent data or assume you see a full chart.
-    *   **Incorporate User Sentiment (if provided)**: If 'User Market Sentiment' is 'bullish', you might look for stronger confirmation for a long position or be more optimistic about upside targets. If 'bearish', you might be more inclined towards short positions or cautious about longs. If no sentiment is provided, perform a balanced, objective analysis based purely on the technical data presented and the risk tolerance.
+    *   **Incorporate Your Determined AI Market Sentiment**: Your strategy should align with the \`aiMarketSentiment\` you've just determined. For example, if you determined 'Bullish', you'd look for stronger confirmation for a long position or be more optimistic about upside targets. If 'Bearish', you might be more inclined towards short positions or cautious about longs.
     *   **Incorporate User Risk Tolerance**: Adjust your strategy aggressiveness. For 'low' risk, prefer strategies with higher probability of smaller gains, tighter stop-losses, and possibly avoiding highly volatile assets. For 'high' risk, you might suggest more aggressive entry points, wider stop-losses, or consider assets with higher volatility if the technicals align; you might also explore higher leverage for futures more readily (with warnings). 'Medium' risk is a balance.
 
-2.  **Formulate Strategy**: Based on your simulated analysis and risk assessment:
+3.  **Formulate Strategy**: Based on your simulated analysis and risk assessment:
     *   If high risk (e.g., suspected rugpull, extreme unexplained volatility) is detected, OR if market data is insufficient/missing:
         *   Set \`tradePossible\` to \`false\`.
         *   Set \`suggestedPosition\` to "None".
@@ -89,17 +87,18 @@ Your Task:
         *   Your \`strategyExplanation\` should clearly state why no trade is advised.
     *   Otherwise, if a trade seems viable:
         *   Set \`tradePossible\` to \`true\`.
-        *   Determine a \`suggestedPosition\` ("Long" or "Short") that aligns with your analysis (and user's sentiment if provided, and risk tolerance). If no sentiment, base position on technicals and risk tolerance.
+        *   Determine a \`suggestedPosition\` ("Long" or "Short") that aligns with your analysis (your determined \`aiMarketSentiment\` and user's \`riskTolerance\`).
         *   Estimate a \`confidenceLevel\` ("High", "Medium", "Low") for this strategy.
         *   Provide \`entryPoint\`, \`exitPoint\`, \`stopLossLevel\`, and \`profitTarget\`. These price points should reflect the chosen risk tolerance (e.g., tighter stops for low risk).
-        *   In your \`strategyExplanation\`, detail your reasoning. Explain how user sentiment (if provided) AND risk tolerance were considered. Also, if the cryptocurrency and market conditions are generally suitable, briefly discuss how this spot idea *could* translate to **futures** (e.g., "For futures traders with a {{{riskTolerance}}} risk tolerance, this long position could be entered. For {{{riskTolerance}}} risk, consider X leverage, being mindful of liquidation risk.") or **options** (e.g., "An options trader with a {{{riskTolerance}}} risk tolerance might consider buying call options with a strike near the entry point if bullish, or puts if bearish, tailoring strike and expiry to their specific risk profile."). These should be general derivative considerations, not specific contract recommendations.
+        *   In your \`strategyExplanation\`, detail your reasoning. Explain how your determined AI market sentiment AND the user's risk tolerance were considered. Also, if the cryptocurrency and market conditions are generally suitable, briefly discuss how this spot idea *could* translate to **futures** (e.g., "For futures traders with a {{{riskTolerance}}} risk tolerance, this long position could be entered. For {{{riskTolerance}}} risk, consider X leverage, being mindful of liquidation risk.") or **options** (e.g., "An options trader with a {{{riskTolerance}}} risk tolerance might consider buying call options with a strike near the entry point if bullish, or puts if bearish, tailoring strike and expiry to their specific risk profile."). These should be general derivative considerations, not specific contract recommendations.
 
-3.  **Output**: Your response MUST be in the JSON format defined by the output schema and include all fields.
+4.  **Output**: Your response MUST be in the JSON format defined by the output schema and include all fields.
 
 Output Field Instructions:
+-   **aiMarketSentiment**: "Bullish", "Bearish", or "Neutral", based on your analysis of provided market data.
 -   **tradePossible**: Boolean. Set to \`false\` if data is missing, high risk is detected, or no clear opportunity.
 -   **suggestedPosition**: "Long", "Short", or "None". If \`tradePossible\` is \`false\`, this MUST be "None".
--   **strategyExplanation**: Detailed analysis. Explain how user sentiment (if provided) AND risk tolerance were considered. Include futures/options considerations if applicable. If no trade, explain why.
+-   **strategyExplanation**: Detailed analysis. Explain how your determined AI market sentiment AND the user's risk tolerance were considered. Include futures/options considerations if applicable. If no trade, explain why.
 -   **currentPrice**: The \`marketData.price\` fetched by the tool. If null, this field must be null.
 -   **entryPoint, exitPoint, stopLossLevel, profitTarget**: Illustrative. If \`tradePossible\` is \`false\`, these MUST all be \`null\`. Price points should be influenced by risk tolerance.
 -   **confidenceLevel**: "High", "Medium", "Low", or "Very Low - Risk Warning".
@@ -128,7 +127,8 @@ const suggestTradingStrategyFlow = ai.defineFlow(
 
     console.log(`[AIStrategyFlow] Calling prompt with input:`, { ...input, marketData }); 
     const {output} = await prompt({
-        ...input, 
+        cryptocurrency: input.cryptocurrency,
+        riskTolerance: input.riskTolerance,
         marketData: marketData,
     });
     
@@ -137,6 +137,7 @@ const suggestTradingStrategyFlow = ai.defineFlow(
     if (!output) {
         console.error("[AIStrategyFlow] AI model did not return an output. Constructing default error response.");
         return {
+            aiMarketSentiment: "Neutral", // Default AI sentiment
             tradePossible: false,
             suggestedPosition: "None",
             strategyExplanation: "The AI model did not return a valid strategy. This could be due to an internal error or inability to process the request. Market data may or may not have been available.",
@@ -153,9 +154,16 @@ const suggestTradingStrategyFlow = ai.defineFlow(
     
     console.log(`[AIStrategyFlow] AI Output for ${input.cryptocurrency}:`, output);
     
-    const finalOutput = {
-        ...output,
+    const finalOutput: SuggestTradingStrategyOutput = {
+        aiMarketSentiment: output.aiMarketSentiment || "Neutral", // Ensure AI sentiment is always set
+        tradePossible: output.tradePossible,
+        suggestedPosition: output.suggestedPosition,
+        strategyExplanation: output.strategyExplanation,
         currentPrice: marketData?.price ?? null, 
+        entryPoint: output.entryPoint,
+        exitPoint: output.exitPoint,
+        stopLossLevel: output.stopLossLevel,
+        profitTarget: output.profitTarget,
         confidenceLevel: output.confidenceLevel || (output.tradePossible ? "Medium" : "Very Low - Risk Warning"),
         riskWarnings: output.riskWarnings || [],
         disclaimer: output.disclaimer || defaultDisclaimer, // Ensure disclaimer is always set
@@ -169,6 +177,7 @@ const suggestTradingStrategyFlow = ai.defineFlow(
         finalOutput.stopLossLevel = null;
         finalOutput.profitTarget = null;
         finalOutput.confidenceLevel = "Very Low - Risk Warning";
+        finalOutput.aiMarketSentiment = "Neutral"; // Can't determine sentiment without data
         if (!finalOutput.riskWarnings.some(w => w.toLowerCase().includes("missing market data"))) {
              finalOutput.riskWarnings.push(`Strategy cannot be determined due to missing or incomplete market data for ${input.cryptocurrency}.`);
         }
@@ -193,3 +202,4 @@ const suggestTradingStrategyFlow = ai.defineFlow(
   }
 );
 
+    
