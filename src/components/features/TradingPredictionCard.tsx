@@ -91,9 +91,18 @@ const getPricePointDetails = (
 };
 
 
-const TradingPredictionCard: React.FC<TradingPredictionCardProps> = ({ prediction }) => {
+const TradingPredictionCard: React.FC<Prediction> = ({
+  trade,
+  position,
+  entryPrice,
+  exitPrice,
+  stopLoss,
+  takeProfit,
+  confidenceLevel,
+  riskWarnings,
+}) => {
   const getPositionBadge = () => {
-    if (!prediction.trade || prediction.position === 'None') {
+    if (!trade || position === 'None') {
       return (
         <Badge variant="outline" className="px-3 py-1 text-sm font-semibold border-muted-foreground/50 text-muted-foreground flex items-center gap-1">
           <MinusCircle className="h-4 w-4" />
@@ -101,7 +110,7 @@ const TradingPredictionCard: React.FC<TradingPredictionCardProps> = ({ predictio
         </Badge>
       );
     }
-    if (prediction.position === 'Long') {
+    if (position === 'Long') {
       return (
         <Badge className="px-3 py-1 text-sm font-semibold bg-green-500/20 hover:bg-green-500/30 text-green-700 dark:text-green-400 border border-green-500/30 flex items-center gap-1">
           <TrendingUp className="h-4 w-4" />
@@ -109,7 +118,7 @@ const TradingPredictionCard: React.FC<TradingPredictionCardProps> = ({ predictio
         </Badge>
       );
     }
-    if (prediction.position === 'Short') {
+    if (position === 'Short') {
       return (
         <Badge className="px-3 py-1 text-sm font-semibold bg-red-500/20 hover:bg-red-500/30 text-red-700 dark:text-red-400 border border-red-500/30 flex items-center gap-1">
           <TrendingDown className="h-4 w-4" />
@@ -120,8 +129,8 @@ const TradingPredictionCard: React.FC<TradingPredictionCardProps> = ({ predictio
     return null;
   };
 
-  const slDetails = getPricePointDetails(prediction.position, 'sl', prediction.entryPrice, prediction.stopLoss);
-  const tpDetails = getPricePointDetails(prediction.position, 'tp', prediction.entryPrice, prediction.takeProfit);
+  const slDetails = getPricePointDetails(position, 'sl', entryPrice, stopLoss);
+  const tpDetails = getPricePointDetails(position, 'tp', entryPrice, takeProfit);
 
   return (
     <div className="bg-card dark:bg-slate-800/80 rounded-lg shadow-lg border border-border p-6 mb-6">
@@ -130,43 +139,43 @@ const TradingPredictionCard: React.FC<TradingPredictionCardProps> = ({ predictio
         {getPositionBadge()}
       </div>
 
-      {prediction.confidenceLevel && (
+      {confidenceLevel && (
         <div className={`mb-3 p-2 rounded-md text-sm ${
-          prediction.confidenceLevel === "Very Low - Risk Warning" ? "bg-destructive/20 text-destructive-foreground border border-destructive/50" :
-          prediction.confidenceLevel === "Low" ? "bg-orange-500/20 text-orange-700 dark:text-orange-400 border border-orange-500/30" :
-          prediction.confidenceLevel === "Medium" ? "bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border border-yellow-500/30" :
+          confidenceLevel === "Very Low - Risk Warning" ? "bg-destructive/20 text-destructive-foreground border border-destructive/50" :
+          confidenceLevel === "Low" ? "bg-orange-500/20 text-orange-700 dark:text-orange-400 border border-orange-500/30" :
+          confidenceLevel === "Medium" ? "bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border border-yellow-500/30" :
           "bg-primary/10 text-primary border border-primary/20"
         }`}>
-          <strong>Confidence:</strong> {prediction.confidenceLevel}
+          <strong>Confidence:</strong> {confidenceLevel}
         </div>
       )}
 
-      {prediction.riskWarnings && prediction.riskWarnings.length > 0 && (
+      {riskWarnings && riskWarnings.length > 0 && (
         <div className="mb-4 p-3 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400">
           <div className="flex items-center gap-2 font-semibold mb-1">
             <AlertTriangle className="h-5 w-5" />
             Risk Warnings:
           </div>
           <ul className="list-disc list-inside text-sm space-y-1">
-            {prediction.riskWarnings.map((warning, index) => (
+            {riskWarnings.map((warning, index) => (
               <li key={index}>{warning}</li>
             ))}
           </ul>
         </div>
       )}
 
-      {prediction.trade && prediction.position !== 'None' && (
+      {trade && position !== 'None' && (
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
             <p className="text-muted-foreground dark:text-gray-400">Entry Price:</p>
             <p className="font-medium text-card-foreground dark:text-white">
-              {`$${formatPrice(prediction.entryPrice)}`}
+              {`$${formatPrice(entryPrice)}`}
             </p>
           </div>
           <div>
             <p className="text-muted-foreground dark:text-gray-400">Target Exit (General):</p>
             <p className="font-medium text-card-foreground dark:text-white">
-              {`$${formatPrice(prediction.exitPrice)}`}
+              {`$${formatPrice(exitPrice)}`}
             </p>
           </div>
           
@@ -175,8 +184,8 @@ const TradingPredictionCard: React.FC<TradingPredictionCardProps> = ({ predictio
               Stop Loss{slDetails.labelSuffix}
             </p>
             <p className="font-medium text-card-foreground dark:text-white">
-              {`$${formatPrice(prediction.stopLoss)}`}{' '}
-              {(prediction.entryPrice !== null && prediction.stopLoss !== null && prediction.entryPrice !== 0) && (
+              {`$${formatPrice(stopLoss)}`}{' '}
+              {(entryPrice !== null && stopLoss !== null && entryPrice !== 0) && (
                 <span className={`text-xs font-normal ${slDetails.colorClass}`}>
                   {slDetails.percentText}
                 </span>
@@ -189,8 +198,8 @@ const TradingPredictionCard: React.FC<TradingPredictionCardProps> = ({ predictio
               Profit Target{tpDetails.labelSuffix}
             </p>
             <p className="font-medium text-card-foreground dark:text-white">
-              {`$${formatPrice(prediction.takeProfit)}`}{' '}
-              {(prediction.entryPrice !== null && prediction.takeProfit !== null && prediction.entryPrice !== 0) && (
+              {`$${formatPrice(takeProfit)}`}{' '}
+              {(entryPrice !== null && takeProfit !== null && entryPrice !== 0) && (
                  <span className={`text-xs font-normal ${tpDetails.colorClass}`}>
                     {tpDetails.percentText}
                 </span>
@@ -199,7 +208,7 @@ const TradingPredictionCard: React.FC<TradingPredictionCardProps> = ({ predictio
           </div>
         </div>
       )}
-      {(!prediction.trade || prediction.position === 'None') && !prediction.riskWarnings?.length && (
+      {(!trade || position === 'None') && !riskWarnings?.length && (
          <p className="text-muted-foreground text-center py-4">No specific trade parameters advised by AI at this time.</p>
       )}
     </div>
