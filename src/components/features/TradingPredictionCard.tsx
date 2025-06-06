@@ -8,7 +8,7 @@ interface Prediction {
   trade: boolean;
   position: 'Long' | 'Short' | 'None';
   entryPrice: number | null;
-  exitPrice: number | null;
+  exitPrice: number | null; // General exit, could be TP or SL
   stopLoss: number | null;
   takeProfit: number | null;
   confidenceLevel?: string;
@@ -53,6 +53,58 @@ const TradingPredictionCard: React.FC<TradingPredictionCardProps> = ({ predictio
     return price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: price < 1 ? 8 : 4 });
   };
 
+  // Helper function to determine label suffix and color for Short positions
+  const getShortSpecifics = (
+    type: 'sl' | 'tp',
+    entry: number | null,
+    value: number | null
+  ): { labelSuffix: string; percentText: string; colorClass: string } => {
+    let labelSuffix = ':';
+    let percentText = '';
+    let colorClass = 'text-muted-foreground';
+
+    if (entry === null || value === null) {
+      return { labelSuffix, percentText, colorClass };
+    }
+
+    const difference = value - entry; // For SL, positive diff is loss. For TP, negative diff is profit.
+    const percent = (difference / entry) * 100;
+    
+    if (type === 'sl') { // Stop Loss for Short
+      percentText = `(${percent.toFixed(2)}%)`; // Percentage relative to entry. Positive means price rose.
+      if (difference > 0) { // Price rose to SL: loss
+        labelSuffix = ' (Above Entry):';
+        colorClass = 'text-destructive';
+      } else if (difference < 0) { // Price fell to SL: anomaly (gain)
+        labelSuffix = ' (Below Entry - Anomaly for SL):';
+        colorClass = 'text-green-500';
+      } else { // At entry
+        labelSuffix = ' (At Entry):';
+        colorClass = 'text-muted-foreground';
+      }
+    } else if (type === 'tp') { // Take Profit for Short
+      // For TP, we typically think of (Entry - TP) / Entry for profit %
+      const profitPercent = ((entry - value) / entry) * 100;
+      percentText = `(${profitPercent.toFixed(2)}%)`; // Positive means profit target is below entry.
+
+      if (value < entry) { // TP is below entry: profit
+        labelSuffix = ' (Below Entry):';
+        colorClass = 'text-green-500';
+      } else if (value > entry) { // TP is above entry: anomaly (loss)
+        labelSuffix = ' (Above Entry - Anomaly for TP):';
+        colorClass = 'text-destructive';
+      } else { // At entry
+        labelSuffix = ' (At Entry):';
+        colorClass = 'text-muted-foreground';
+      }
+    }
+    return { labelSuffix, percentText, colorClass };
+  };
+
+
+  const slShortSpecifics = prediction.position === 'Short' ? getShortSpecifics('sl', prediction.entryPrice, prediction.stopLoss) : null;
+  const tpShortSpecifics = prediction.position === 'Short' ? getShortSpecifics('tp', prediction.entryPrice, prediction.takeProfit) : null;
+
   return (
     <div className="bg-card dark:bg-slate-800/80 rounded-lg shadow-lg border border-border p-6 mb-6">
       <div className="flex items-center justify-between mb-4">
@@ -94,21 +146,53 @@ const TradingPredictionCard: React.FC<TradingPredictionCardProps> = ({ predictio
             </p>
           </div>
           <div>
-            <p className="text-muted-foreground dark:text-gray-400">Target Exit:</p>
+            <p className="text-muted-foreground dark:text-gray-400">Target Exit (General):</p>
             <p className="font-medium text-card-foreground dark:text-white">
               {`$${formatPrice(prediction.exitPrice)}`}
             </p>
           </div>
+          
+          {/* Stop Loss */}
           <div>
-            <p className="text-muted-foreground dark:text-gray-400">Stop Loss:</p>
+            <p className="text-muted-foreground dark:text-gray-400">
+              Stop Loss{prediction.position === 'Short' && slShortSpecifics ? slShortSpecifics.labelSuffix : ':'}
+            </p>
             <p className="font-medium text-card-foreground dark:text-white">
-              {`$${formatPrice(prediction.stopLoss)}`}
+              {`$${formatPrice(prediction.stopLoss)}`}{' '}
+              {prediction.entryPrice !== null && prediction.stopLoss !== null && (
+                <span className={`text-xs font-normal ${
+                  prediction.position === 'Short' && slShortSpecifics ? slShortSpecifics.colorClass :
+                  prediction.stopLoss < prediction.entryPrice ? 'text-destructive' : // Long: SL below entry is loss
+                  prediction.stopLoss > prediction.entryPrice ? 'text-green-500' : // Long: SL above entry is 'gain' (anomaly for SL)
+                  'text-muted-foreground' // Long: SL at entry
+                }`}>
+                  {prediction.position === 'Short' && slShortSpecifics ? slShortSpecifics.percentText :
+                   `(${(( (prediction.stopLoss - prediction.entryPrice) / prediction.entryPrice ) * 100).toFixed(2)}%)`
+                  }
+                </span>
+              )}
             </p>
           </div>
+
+          {/* Take Profit */}
           <div>
-            <p className="text-muted-foreground dark:text-gray-400">Profit Target:</p>
+            <p className="text-muted-foreground dark:text-gray-400">
+              Profit Target{prediction.position === 'Short' && tpShortSpecifics ? tpShortSpecifics.labelSuffix : ':'}
+            </p>
             <p className="font-medium text-card-foreground dark:text-white">
-              {`$${formatPrice(prediction.takeProfit)}`}
+              {`$${formatPrice(prediction.takeProfit)}`}{' '}
+              {prediction.entryPrice !== null && prediction.takeProfit !== null && (
+                 <span className={`text-xs font-normal ${
+                    prediction.position === 'Short' && tpShortSpecifics ? tpShortSpecifics.colorClass :
+                    prediction.takeProfit > prediction.entryPrice ? 'text-green-500' : // Long: TP above entry is profit
+                    prediction.takeProfit < prediction.entryPrice ? 'text-destructive' : // Long: TP below entry is 'loss' (anomaly for TP)
+                    'text-muted-foreground' // Long: TP at entry
+                  }`}>
+                    {prediction.position === 'Short' && tpShortSpecifics ? tpShortSpecifics.percentText :
+                    `(${(((prediction.takeProfit - prediction.entryPrice) / prediction.entryPrice) * 100).toFixed(2)}%)`
+                    }
+                </span>
+              )}
             </p>
           </div>
         </div>
@@ -116,9 +200,6 @@ const TradingPredictionCard: React.FC<TradingPredictionCardProps> = ({ predictio
       {(!prediction.trade || prediction.position === 'None') && !prediction.riskWarnings?.length && (
          <p className="text-muted-foreground text-center py-4">No specific trade parameters advised by AI at this time.</p>
       )}
-
-      {/* PredictionChat component can be re-enabled if needed */}
-      {/* <PredictionChat /> */}
     </div>
   );
 };
