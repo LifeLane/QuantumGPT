@@ -264,10 +264,15 @@ export default function TradingStrategyForm() {
              <div className="text-sm text-muted-foreground text-center italic">
                 Note: Chart above is a simplified line chart with volume. It defaults to a daily view, but you can use its controls to select other timeframes. For detailed candlestick charts, please use the "Charting Tools" page.
             </div>
-            <div className="text-center">
-              <h3 className="font-semibold text-lg mb-1 text-foreground">Strategy Explanation:</h3>
-              <Skeleton className="h-20 w-full max-w-2xl mx-auto bg-muted/50" />
-              <p className="text-muted-foreground text-sm mt-2">Enter your criteria above to generate an AI strategy.</p>
+            <div className="space-y-2">
+              <h3 className="font-semibold text-lg text-foreground text-center">Strategy Explanation:</h3>
+              <div className="bg-background/30 p-4 rounded-md border border-border shadow-sm min-h-[100px]">
+                <Skeleton className="h-5 w-3/4 mb-2 bg-muted/40" />
+                <Skeleton className="h-4 w-full mb-1 bg-muted/40" />
+                <Skeleton className="h-4 w-full mb-1 bg-muted/40" />
+                <Skeleton className="h-4 w-5/6 bg-muted/40" />
+                <p className="text-muted-foreground text-sm mt-3 text-center">Enter your criteria above to generate an AI strategy.</p>
+              </div>
             </div>
             <Separator />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-4 text-center">
@@ -339,9 +344,11 @@ export default function TradingStrategyForm() {
                <div className="text-sm text-muted-foreground text-center italic">
                  Note: Chart above is a simplified line chart with volume. It defaults to a daily view, but you can use its controls to select other timeframes. For detailed candlestick charts, please use the "Charting Tools" page.
             </div>
-              <div className="text-center">
-                <h3 className="font-semibold text-lg mb-1 text-foreground">Strategy Explanation:</h3>
-                <p className="text-muted-foreground text-sm whitespace-pre-line text-left">{strategy.strategyExplanation}</p>
+             <div className="space-y-2">
+                <h3 className="font-semibold text-lg text-foreground text-center mb-2">Strategy Explanation:</h3>
+                <div className="bg-background/30 p-4 rounded-md border border-border shadow-sm">
+                  <p className="text-muted-foreground text-sm whitespace-pre-line text-left leading-relaxed">{strategy.strategyExplanation}</p>
+                </div>
               </div>
 
               <Separator />
@@ -392,21 +399,17 @@ export default function TradingStrategyForm() {
           </Card>
 
           <TradingPredictionCard
-            prediction={{
-              trade: strategy.tradePossible,
-              position: strategy.suggestedPosition || "None",
-              entryPrice: strategy.entryPoint,
-              exitPrice: strategy.exitPoint,
-              stopLoss: strategy.stopLossLevel,
-              takeProfit: strategy.profitTarget,
-              confidenceLevel: strategy.confidenceLevel,
-              riskWarnings: strategy.riskWarnings,
-            }}
+            trade={strategy.tradePossible}
+            position={strategy.suggestedPosition}
+            entryPrice={strategy.entryPoint}
+            exitPrice={strategy.exitPoint} // Assuming this is the general exit/take profit
+            stopLoss={strategy.stopLossLevel}
+            takeProfit={strategy.profitTarget}
+            confidenceLevel={strategy.confidenceLevel}
+            riskWarnings={strategy.riskWarnings}
           />
         </>
       )}
     </div>
   );
 }
-
-    
